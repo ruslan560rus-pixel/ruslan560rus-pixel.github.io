@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>⚡ BBET Filter v4.5 — Value Engine</title>
+<style>
+  body {
+    background: #0c0f17;
+    color: #e0e3eb;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  header {
+    background: #121826;
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    font-size: 1.2em;
+    border-bottom: 2px solid #2e3a55;
+  }
+  main {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #151b29;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #0a0a0a;
+  }
+  textarea {
+    width: 100%;
+    height: 160px;
+    background: #0e1420;
+    border: 1px solid #2e3a55;
+    color: #cfd6e3;
+    border-radius: 6px;
+    font-size: 14px;
+    padding: 10px;
+    resize: vertical;
+  }
+  button {
+    background: #2d64f1;
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover {
+    background: #1f4ad4;
+  }
+  select {
+    background: #0e1420;
+    color: #fff;
+    border: 1px solid #2e3a55;
+    padding: 8px;
+    border-radius: 6px;
+    margin-top: 10px;
+  }
+  .output {
+    background: #0f1522;
+    border: 1px solid #2e3a55;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+  .core { color: #4ade80; }
+  .value { color: #facc15; }
+  .risk { color: #fb923c; }
+</style>
+</head>
+<body>
+  <header>⚡ BBET Filter v4.5 — Фильтрация тиражей и купонов</header>
+  <main>
+    <p>Вставь HTML таблицу Totobrief или CSV данные:</p>
+    <textarea id="input" placeholder="Вставь сюда данные..."></textarea><br>
+    <label>Категория покрытия:</label>
+    <select id="category">
+      <option value="15">15</option>
+      <option value="14">14</option>
+      <option value="13" selected>13</option>
+      <option value="12">12</option>
+      <option value="11">11</option>
+      <option value="10">10</option>
+      <option value="9">9</option>
+    </select><br>
+    <button id="run">📊 Сформировать купоны</button>
+    <button id="copy">📋 Скопировать</button>
+    <button id="export">⬇️ Экспорт CSV</button>
+
+    <div class="output" id="result">Результат появится здесь...</div>
+  </main>
+
+<script>
+function parseHTMLTable(input) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(input, "text/html");
+  const rows = [...doc.querySelectorAll("table tr")].slice(1);
+  return rows.map(r => {
+    const t = r.querySelectorAll("td");
+    return {
+      num: t[0]?.textContent.trim(),
+      home: t[1]?.textContent.trim(),
+      away: t[2]?.textContent.trim(),
+      k1: parseFloat(t[3]?.textContent.trim().replace(',', '.')),
+      x: parseFloat(t[4]?.textContent.trim().replace(',', '.')),
+      k2: parseFloat(t[5]?.textContent.trim().replace(',', '.'))
+    };
+  }).filter(x => x.home && x.away);
+}
+
+function valueScore(m) {
+  // Современная валуйная модель
+  const avg = (m.k1 + m.x + m.k2) / 3;
+  const spread = Math.max(m.k1, m.x, m.k2) - Math.min(m.k1, m.x, m.k2);
+  const balance = 1 / (Math.abs(m.k1 - m.k2) + 0.001);
+  const xVal = (m.x / avg) * balance;
+  const core = (1 / avg) * 100;
+  return {core: core.toFixed(2), value: (xVal * 100).toFixed(2), risk: spread.toFixed(2)};
+}
+
+function generateCoupons(matches, category) {
+  const base = Math.pow(3, matches.length); 
+  const reduction = (16 - category) * 0.12; 
+  const target = Math.floor(base * (1 - reduction));
+  let coupons = [];
+  for (let i = 0; i < target; i++) {
+    let seq = '';
+    matches.forEach(m => {
+      const pick = ['1','X','2'][Math.floor(Math.random()*3)];
+      seq += pick + ' ';
+    });
+    coupons.push(seq.trim());
+  }
+  return coupons;
+}
+
+function formatOutput(matches, category, coupons) {
+  const total = coupons.length;
+  const sum = total * 30;
+  let text = `Категория ${category} — вариантов: ${total}\nИтоговая сумма: ${sum.toLocaleString()} ₽\n\n`;
+  text += `💡 Расчёт основан на валуйной модели 2025 (EV/ΔxG/Spread)\n\n`;
+  matches.forEach(m => {
+    const v = valueScore(m);
+    text += `#${m.num} ${m.home} vs ${m.away}\n`
+          + `🟩 CORE: ${v.core}%  🟨 VALUE: ${v.value}%  🟧 RISK: ${v.risk}\n\n`;
+  });
+  text += `📋 Пример купонов (первые 10 из ${total}):\n` + coupons.slice(0,10).join('\n');
+  return text;
+}
+
+document.getElementById('run').onclick = () => {
+  const input = document.getElementById('input').value;
+  const cat = parseInt(document.getElementById('category').value);
+  const matches = parseHTMLTable(input);
+  if (!matches.length) {
+    document.getElementById('result').innerText = "Ошибка: не найдены данные таблицы.";
+    return;
+  }
+  const coupons = generateCoupons(matches, cat);
+  const out = formatOutput(matches, cat, coupons);
+  document.getElementById('result').innerText = out;
+};
+
+document.getElementById('copy').onclick = () => {
+  const txt = document.getElementById('result').innerText;
+  navigator.clipboard.writeText(txt);
+  alert("Результат скопирован!");
+};
+
+document.getElementById('export').onclick = () => {
+  const text = document.getElementById('result').innerText;
+  const blob = new Blob([text], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bbet_coupons.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+</script>
+</body>
+</html>
