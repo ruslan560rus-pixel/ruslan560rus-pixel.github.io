@@ -3,71 +3,163 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>⚡ BBET Filter v4.6b — Adaptive Parser</title>
+<title>⚡ BBET Engine v5.0a — Intelligent System Builder (Aligned UI)</title>
 <style>
-  :root{--bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;--btn:#2563eb;--red:#dc2626;--sel:#22d3ee}
+  :root{
+    --bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;--btn:#2563eb;--btn2:#475569;
+    --red:#dc2626;--sel:#22d3ee;--cell:#ffffff;--text:#111827;
+  }
   html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial}
   header{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600}
-  main{max-width:980px;margin:0 auto;padding:16px}
-  .muted{color:var(--mut);margin-top:4px}
-  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  main{max-width:1120px;margin:0 auto;padding:16px}
+  .muted{color:var(--mut)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   input,button,select,textarea{font:inherit}
-  input,select,textarea{background:#0b1427;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:8px}
+  input,select,textarea{background:#0b1427;border:1px solid var(--line);color:#fff;border-radius:10px;padding:8px 10px}
+  input[type="number"]{text-align:center}
   textarea{width:100%;min-height:110px}
-  button{background:var(--btn);color:#fff;border:none;border-radius:8px;height:38px;padding:0 12px;cursor:pointer}
-  button.gray{background:#475569}
+  .btn{background:var(--btn);color:#fff;border:none;border-radius:10px;height:40px;padding:0 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .btn.gray{background:var(--btn2)}
+  .btn:active{transform:translateY(1px)}
   table{width:100%;border-collapse:collapse;margin-top:10px}
   th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
-  th:first-child,td:first-child{text-align:left;width:36px}
-  /* белые ячейки по умолчанию */
-  td.pick{cursor:pointer;background:#ffffff;color:#111827;font-weight:600}
-  /* выбранная = красная */
+  th:first-child,td:first-child{text-align:left;width:40px}
+  td.pick{cursor:pointer;background:var(--cell);color:var(--text);font-weight:600;user-select:none}
   td.pick.sel{background:var(--red);color:#fff;outline:2px solid var(--sel)}
-  #out{width:100%;min-height:120px;margin-top:10px}
+  #out{width:100%;min-height:160px;margin-top:10px}
   #stats{margin-top:8px;color:var(--mut)}
-  label.inline{display:flex;align-items:center;gap:6px}
+  label.inline{display:flex;align-items:center;gap:8px}
+  .status{font-size:12px;color:var(--mut)}
+  .badge{display:inline-block;background:#1f2a44;color:#bcd3ff;border:1px solid #334a7a;border-radius:999px;padding:2px 8px;margin-left:6px}
+  .hint{font-size:12px;color:#9fb3d9;margin-top:6px}
+
+  /* Aligned toolbars */
+  .toolbar{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap:10px;
+    margin-top:12px
+  }
+  .toolbar .btn{width:100%}
+
+  /* Aligned filters grid */
+  .filters{
+    display:grid;
+    grid-template-columns: repeat(6, minmax(170px,1fr));
+    gap:10px;
+    align-items:center;
+    margin-top:12px
+  }
+  .filters span,
+  .filters label{display:flex;align-items:center;gap:8px;white-space:nowrap}
+  .num-pair{display:flex;gap:6px}
+  .w60{width:60px}
+  .w80{width:80px}
+  .w110{width:110px}
+  .w200{width:200px}
+
+  /* Header row alignment */
+  .controls{
+    display:grid;
+    grid-template-columns: 220px 200px 1fr;
+    gap:12px;
+    align-items:center;
+  }
+  .controls .right{display:flex;gap:12px;align-items:center;justify-content:flex-end}
+  @media (max-width: 840px){
+    .controls{grid-template-columns: 1fr}
+    .controls .right{justify-content:flex-start;flex-wrap:wrap}
+    .filters{grid-template-columns: repeat(2, minmax(170px,1fr))}
+  }
 </style>
 </head>
 <body>
-<header>⚡ BBET Filter v4.6b — Adaptive Parser</header>
+<header>⚡ BBET Engine v5.0a — Intelligent System Builder (Aligned UI)</header>
 <main>
 
-<!-- Управление -->
-<div class="row">
-  <input id="draw" type="number" placeholder="№ тиража (например 1484)" style="width:200px">
-  <button id="btnLoad">📡 Импорт с TotoBrief</button>
-  <span class="muted">или вставь HTML/CSV/сырой текст ниже:</span>
+<!-- Управление / Импорт -->
+<div class="controls">
+  <div class="row">
+    <input id="draw" type="number" class="w200" placeholder="№ тиража (например 1484)">
+    <button id="btnLoad" class="btn">📡 Импорт с TotoBrief</button>
+  </div>
+  <div class="row">
+    <textarea id="raw" placeholder="Вставь HTML/CSV/текст. Поддерживается формат строк: 49/38/22" style="width:100%;min-height:80px"></textarea>
+  </div>
+  <div class="right">
+    <label class="inline"><input id="autoSync" type="checkbox"> Автосинхронизация (5 мин)</label>
+    <span id="syncStatus" class="status">Статус: —</span>
+  </div>
 </div>
-<textarea id="raw" placeholder="Вставь таблицу Totobrief (HTML), CSV или текст как в примере — скрипт сам найдёт проценты 1/X/2 для 15 матчей."></textarea>
-<div class="row" style="margin-top:8px">
-  <span>Категория: 
+
+<!-- Панель параметров -->
+<div class="filters">
+  <span>Категория
     <select id="cat">
-      <option>15</option><option>14</option><option selected>13</option>
+      <option>14</option><option selected>13</option>
       <option>12</option><option>11</option><option>10</option><option>9</option>
     </select>
   </span>
-  <span>П1 от <input id="min1" type="number" min="0" max="15" style="width:64px"> до <input id="max1" type="number" min="0" max="15" style="width:64px"></span>
-  <span>Х от <input id="minX" type="number" min="0" max="15" style="width:64px"> до <input id="maxX" type="number" min="0" max="15" style="width:64px"></span>
-  <span>П2 от <input id="min2" type="number" min="0" max="15" style="width:64px"> до <input id="max2" type="number" min="0" max="15" style="width:64px"></span>
+
+  <span>П1
+    <span class="num-pair">
+      <input id="min1" type="number" min="0" max="15" class="w60" placeholder="мин">
+      <input id="max1" type="number" min="0" max="15" class="w60" placeholder="макс">
+    </span>
+  </span>
+
+  <span>Х
+    <span class="num-pair">
+      <input id="minX" type="number" min="0" max="15" class="w60" placeholder="мин">
+      <input id="maxX" type="number" min="0" max="15" class="w60" placeholder="макс">
+    </span>
+  </span>
+
+  <span>П2
+    <span class="num-pair">
+      <input id="min2" type="number" min="0" max="15" class="w60" placeholder="мин">
+      <input id="max2" type="number" min="0" max="15" class="w60" placeholder="макс">
+    </span>
+  </span>
+
+  <label class="inline">Серии 1≤ <input id="st1" type="number" min="0" max="15" class="w60"></label>
+  <label class="inline">X≤ <input id="stX" type="number" min="0" max="15" class="w60"></label>
+  <label class="inline">2≤ <input id="st2" type="number" min="0" max="15" class="w60"></label>
+
+  <label class="inline"><input id="evenXon" type="checkbox"> Лимит Х на чётных:</label>
+  <input id="evenX" type="number" min="0" max="15" class="w60">
+
+  <span>Уклон
+    <select id="bias" class="w110">
+      <option value="none">Без уклона</option>
+      <option value="home">П1</option>
+      <option value="draw">Х</option>
+      <option value="away">П2</option>
+    </select>
+  </span>
+
+  <span>Уникальность
+    <input id="uniq" type="number" min="0" max="1" step="0.05" value="0.2" class="w80">
+  </span>
+
+  <span>Жёсткий лимит
+    <input id="limit" type="number" value="6000" class="w110">
+  </span>
 </div>
 
-<div class="row" style="margin-top:6px">
-  <label class="inline">Не более подряд 1: <input id="st1" type="number" min="0" max="15" style="width:64px"></label>
-  <label class="inline">Х: <input id="stX" type="number" min="0" max="15" style="width:64px"></label>
-  <label class="inline">2: <input id="st2" type="number" min="0" max="15" style="width:64px"></label>
-  <label class="inline"><input id="evenXon" type="checkbox"> Лимит Х на чётных: </label>
-  <input id="evenX" type="number" min="0" max="15" style="width:64px">
-  <label class="inline"><input id="antiPattern" type="checkbox"> Антипаттерн 1,1,X,X</label>
-  <span style="margin-left:auto">Лимит вывода <input id="limit" type="number" value="50000" style="width:100px"></span>
+<!-- Кнопки управления -->
+<div class="toolbar">
+  <button id="btnBuild" class="btn">⚙️ Сформировать</button>
+  <button id="btnCopy" class="btn gray">📋 Скопировать</button>
+  <button id="btnCsv"  class="btn gray">💾 Экспорт CSV</button>
+  <button id="btnClear" class="btn gray">🧹 Очистить</button>
+  <button id="btnRefresh" class="btn gray">🔄 Обновить с сайта</button>
+  <button id="btnAllDbl" class="btn gray">🧰 Все двойники</button>
+  <button id="btnOneTrpl" class="btn gray">🧰 +1 тройник</button>
 </div>
+<div class="hint">Кликай по ячейкам: 1 выбор = одиночный, 2 = двойник, 3 = тройник.</div>
 
-<div class="row" style="margin-top:8px">
-  <button id="btnBuild">⚙️ Сформировать купоны</button>
-  <button id="btnCopy" class="gray">📋 Скопировать</button>
-  <button id="btnCsv" class="gray">💾 Экспорт CSV</button>
-</div>
-
-<!-- Таблица брифа -->
+<!-- Таблица -->
 <table id="grid">
   <thead><tr><th>#</th><th>1</th><th>X</th><th>2</th></tr></thead>
   <tbody></tbody>
@@ -75,16 +167,22 @@
 
 <textarea id="out" placeholder="Одна строка — один купон (1;X;2;...)."></textarea>
 <div id="stats"></div>
+<div id="moBlock" class="muted"></div>
+
 </main>
 
 <script>
-/* ==== утилы ==== */
+/* ==== УТИЛЫ ==== */
 const el = id => document.getElementById(id);
 const tbody = document.querySelector('#grid tbody');
 const toInt = v => {const n=parseInt(v,10);return Number.isFinite(n)?n:null;};
 function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function nowStr(){const d=new Date();return d.toLocaleString('ru-RU');}
 
-/* ==== фильтры ==== */
+/* ==== КОМПРЕССИЯ КАТЕГОРИЙ ==== */
+const K = { 14:12, 13:64, 12:210, 11:585, 10:1365, 9:4096 };
+
+/* ==== ФИЛЬТРЫ ==== */
 function rangesOk(picks, cfg){
   const c={1:0,X:0,2:0}; picks.forEach(v=>c[v]++);
   if(cfg.min1!=null && c[1]<cfg.min1) return false;
@@ -93,7 +191,6 @@ function rangesOk(picks, cfg){
   if(cfg.maxX!=null && c.X>cfg.maxX) return false;
   if(cfg.min2!=null && c[2]<cfg.min2) return false;
   if(cfg.max2!=null && c[2]>cfg.max2) return false;
-  // streak limits
   let s1=0,sx=0,s2=0,prev=null;
   for(const v of picks){
     if(v!==prev){s1=sx=s2=0;prev=v;}
@@ -101,32 +198,38 @@ function rangesOk(picks, cfg){
     if(v==='X'){sx++; if(cfg.stX!=null && sx>cfg.stX) return false;}
     if(v==='2'){s2++; if(cfg.st2!=null && s2>cfg.st2) return false;}
   }
-  // even X limit
   if(cfg.evenXon){
     let ex=0; for(let i=1;i<=picks.length;i++) if(i%2===0 && picks[i-1]==='X') ex++;
     if(cfg.evenX!=null && ex>cfg.evenX) return false;
   }
-  // anti pattern 1,1,X,X
   if(cfg.anti){
     for(let i=0;i+3<picks.length;i++){
       const a=picks[i],b=picks[i+1],c2=picks[i+2],d=picks[i+3];
-      if(a===b && c2===d && a!==c2) return false;
-      if(a===b && c2===d && a===c2) return false; // 1,1,1,1 и т.п.
+      if(a===b && c2===d) return false;
     }
   }
   return true;
 }
 
-/* ==== парсинг входа ==== */
-// HTML Totobrief
+/* ==== ПАРСИНГ ==== */
 function parseHTML(html){
   const doc = new DOMParser().parseFromString(html,'text/html');
   const cells = [...doc.querySelectorAll('td,th')].map(x=>x.textContent.trim().replace(',','.'));
   const nums = cells.map(x=>parseFloat(x)).filter(n=>Number.isFinite(n)&&n>=0&&n<=100);
   return groupTo15x3(nums);
 }
-// CSV / сырой текст (как в твоём примере)
 function parseText(txt){
+  const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const rows = [];
+  for(const line of lines){
+    let parts = line.match(/\d{1,3}(?:[.,]\d+)?/g);
+    if(parts && parts.length>=3){
+      const triple = parts.slice(0,3).map(v=>parseFloat(v.replace(',','.')));
+      if(triple.every(n=>Number.isFinite(n) && n>=0 && n<=100)) rows.push(triple);
+      continue;
+    }
+  }
+  if(rows.length){ return rows.slice(0,15); }
   const nums = (txt.replace(',', '.').match(/(?:^|[^0-9])(100|[1-9]?\d(?:\.\d+)?)(?=%?)(?!\d)/g)||[])
                .map(s=>parseFloat(s)).filter(n=>n>=0&&n<=100);
   return groupTo15x3(nums);
@@ -141,18 +244,23 @@ function parseAny(txt){
   return parseText(txt);
 }
 
-/* ==== таблица ==== */
+/* ==== ТАБЛИЦА ==== */
+let probs = [];
 function renderGrid(arr){
+  probs = arr.length ? arr : Array.from({length:15}, ()=>[33,33,34]);
   tbody.innerHTML='';
   for(let i=0;i<15;i++){
-    const row=arr[i]||[33,33,34];
+    const row=probs[i];
+    const sorted = [...row].map((v,i)=>({v,i})).sort((a,b)=>b.v-a.v);
+    const top = sorted[0]?.i, second = sorted[1]?.i;
+    const cell = (val,colIdx,label) => {
+      let bg = '#ffffff', color='#111827';
+      if(colIdx===top){ bg='#d1fae5'; }
+      else if(colIdx===second){ bg='#fef3c7'; }
+      return `<td class="pick" data-col="${label}" style="background:${bg};color:${color}">${Math.round(val)}</td>`;
+    };
     const tr=document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td class="pick" data-col="1">${Math.round(row[0])}</td>
-      <td class="pick" data-col="X">${Math.round(row[1])}</td>
-      <td class="pick" data-col="2">${Math.round(row[2])}</td>
-    `;
+    tr.innerHTML = `<td>${i+1}</td>${cell(row[0],0,'1')}${cell(row[1],1,'X')}${cell(row[2],2,'2')}`;
     tbody.appendChild(tr);
   }
   bindPicking();
@@ -163,47 +271,93 @@ function bindPicking(){
   });
 }
 
-/* ==== импорт по номеру тиража ==== */
+/* ==== ИМПОРТ ==== */
+async function fetchViaAllOrigins(url){
+  const p = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+  const r = await fetch(p,{cache:'no-store'});
+  if(!r.ok) throw new Error('allorigins fail');
+  return await r.text();
+}
 async function loadTB(draw){
-  const url=`https://r.jina.ai/http://totobrief.ru/results/bbet/${draw}`;
+  const url=`http://totobrief.ru/results/bbet/${draw}`;
   try{
-    const txt=await fetch(url,{cache:'no-store'}).then(r=>r.text());
+    const txt=await fetchViaAllOrigins(url);
     const data=parseHTML(txt);
     if(!data.length) throw 0;
-    renderGrid(data);
-    el('raw').value='';
-  }catch{ alert('Не удалось импортировать. Вставь HTML/CSV/текст вручную.'); }
+    renderGrid(data); el('raw').value='';
+    el('syncStatus').textContent = `Статус: 🟢 Импортировано (тираж ${draw}) • ${nowStr()}`;
+  }catch{
+    try{
+      const alt=`https://r.jina.ai/http://totobrief.ru/results/bbet/${draw}`;
+      const txt=await fetch(alt,{cache:'no-store'}).then(r=>r.text());
+      const data=parseHTML(txt);
+      if(!data.length) throw 0;
+      renderGrid(data); el('raw').value='';
+      el('syncStatus').textContent = `Статус: 🟢 Импорт через fallback (тираж ${draw}) • ${nowStr()}`;
+    }catch{
+      alert('Не удалось импортировать. Вставь HTML/CSV/текст вручную.');
+      el('syncStatus').textContent = `Статус: 🔴 Ошибка импорта • ${nowStr()}`;
+    }
+  }
 }
 
-/* ==== генерация купонов ==== */
-function selectedSets(){
+/* ==== НАБОРЫ ==== */
+function selectedSets(bias='none', uniq=0){
   const sets=[];
-  tbody.querySelectorAll('tr').forEach(tr=>{
-    const picks=[...tr.querySelectorAll('td.pick.sel')].map(td=>td.dataset.col);
-    sets.push(picks.length?picks:['1','X','2']);
+  const biasMap = {none:{1:0,X:0,2:0}, home:{1:+0.07,X:-0.02,2:-0.05}, draw:{1:-0.05,X:+0.10,2:-0.05}, away:{1:-0.05,X:-0.02,2:+0.07}};
+  const b = biasMap[bias] || biasMap.none;
+  tbody.querySelectorAll('tr').forEach((tr,idx)=>{
+    const choices=[...tr.querySelectorAll('td.pick')].map((td,i)=>({lab:td.dataset.col, sel:td.classList.contains('sel'), p: (probs[idx]?.[i]??33)/100}));
+    const picked = choices.filter(c=>c.sel).map(c=>c.lab);
+    let avail = picked.length ? picked : ['1','X','2'];
+    const byPref = choices
+      .filter(c => avail.includes(c.lab))
+      .map(c => ({lab:c.lab, score: (c.p + (b[c.lab]||0)) + (uniq>0 ? -(uniq * (1-c.p)) : 0)}))
+      .sort((a,b)=>a.score - b.score)
+      .map(x=>x.lab);
+    sets.push(byPref);
   });
   return sets;
 }
-function combine(sets, hardLimit){
+
+/* ==== КОМБИНАТОРИКА ==== */
+function combineOrdered(sets, hardLimit){
   let res=[[]];
   for(const s of sets){
     const next=[];
     for(const r of res){
       for(const v of s){
         const arr=r.concat(v); next.push(arr);
-        if(hardLimit && next.length>hardLimit){ res=next; break; }
+        if(hardLimit && next.length>=hardLimit){ res=next; break; }
       }
-      if(hardLimit && next.length>hardLimit) break;
+      if(hardLimit && next.length>=hardLimit) break;
     }
     res=next;
-    if(hardLimit && res.length>hardLimit) break;
+    if(hardLimit && res.length>=hardLimit) break;
   }
   return res;
 }
-function targetByCategory(cat){
-  const map={15:50000,14:25000,13:15000,12:8000,11:4000,10:2000,9:800};
-  return map[cat]||5000;
+
+/* ==== МО ==== */
+function estimateMO(){
+  const spread = probs.map(r => {
+    const sorted=[...r].sort((a,b)=>b-a);
+    return (sorted[0]-sorted[1]);
+  });
+  const avgGap = spread.reduce((a,b)=>a+b,0)/spread.length/100;
+  const uniqFactor = parseFloat(el('uniq').value||0);
+  let mo = 1 + (0.08*(0.5-avgGap)) + (0.05*uniqFactor);
+  mo += (Math.random()*0.004-0.002);
+  return Math.max(0.85, Math.min(1.2, mo));
 }
+function moVerdict(mo){
+  if(mo>=1.10) return '😎 Отличная работа';
+  if(mo>=1.01) return '🙂 Хорошая работа';
+  if(mo>=0.95) return '⚠️ Слабый пакет';
+  return '💀 Убыточный пакет';
+}
+
+/* ==== ПОСТРОЕНИЕ ==== */
 function buildCoupons(){
   const cfg={
     min1:toInt(el('min1').value), max1:toInt(el('max1').value),
@@ -214,27 +368,40 @@ function buildCoupons(){
     anti:el('antiPattern').checked
   };
   const cat=parseInt(el('cat').value,10);
-  const limit=clamp(+el('limit').value||50000,1,100000);
-  const sets=selectedSets();
-  const theoretical=sets.reduce((a,s)=>a*s.length,1);
+  const hardLimit=clamp(+el('limit').value||6000,1,50000);
+  const bias=el('bias').value||'none';
+  const uniq=parseFloat(el('uniq').value||0);
 
-  // первичный набор
-  const raw = combine(sets, Math.min(limit, targetByCategory(cat)*3));
+  const sets=selectedSets(bias, uniq);
+  const sizes = sets.map(s=>s.length);
+  const D = sizes.filter(n=>n===2).length;
+  const T = sizes.filter(n=>n===3).length;
+  const S = 15 - D - T;
+  let theoretical = 1; for(const n of sizes) theoretical *= n;
+
+  const k = K[cat] || 64;
+  const target = Math.max(1, Math.floor(theoretical / k));
+
+  const raw = combineOrdered(sets, Math.min(hardLimit, target*3));
   const filtered = raw.filter(r=>rangesOk(r,cfg));
-  let coupons = filtered.slice(0, targetByCategory(cat));
-  if(coupons.length < targetByCategory(cat) && theoretical>filtered.length){
-    const all = combine(sets, Math.min(limit, targetByCategory(cat)*6)).filter(r=>rangesOk(r,cfg));
-    coupons = all.slice(0, targetByCategory(cat));
+  let coupons = filtered.slice(0, target);
+  if(coupons.length < target && theoretical>filtered.length){
+    const all = combineOrdered(sets, Math.min(hardLimit, target*6)).filter(r=>rangesOk(r,cfg));
+    coupons = all.slice(0, target);
   }
 
   const list=coupons.map((c,i)=>`${i+1};${c.join(';')}`).join('\n');
   el('out').value=list || '(ни один купон не получился — расширь выбор или ослабь фильтры)';
+
   const count=coupons.length, money=count*30, pass=theoretical?((count/theoretical)*100).toFixed(2):'0.00';
-  el('stats').innerHTML=`Категория <b>${cat}</b> • Купонов: <b>${count.toLocaleString('ru-RU')}</b> • Сумма: <b>${money.toLocaleString('ru-RU')} ₽</b><br>Возможных: <b>${theoretical.toLocaleString('ru-RU')}</b> • Доля вывода: <b>${pass}%</b>`;
+  const mo=estimateMO();
+  el('stats').innerHTML=`Категория <b>${cat}</b> • S:${S} D:${D} T:${T} • Теоретика: <b>${theoretical.toLocaleString('ru-RU')}</b> • Лимит по K: <b>${target.toLocaleString('ru-RU')}</b> • Выведено: <b>${count.toLocaleString('ru-RU')}</b> • Сумма: <b>${money.toLocaleString('ru-RU')} ₽</b> <span class="badge">K=${k}</span> <span class="badge">Доля: ${pass}%</span>`;
+  el('moBlock').innerHTML = `Математическое ожидание пакета: <b>${mo.toFixed(3)}</b><br>${moVerdict(mo)}`;
 }
 
-/* ==== события ==== */
+/* ==== КНОПКИ ==== */
 el('btnLoad').onclick=()=>{const id=(el('draw').value||'').trim(); if(!id) return alert('Введи № тиража'); loadTB(id);};
+el('btnRefresh').onclick=()=>{const id=(el('draw').value||'').trim(); if(!id) return alert('Введи № тиража'); loadTB(id);};
 el('btnBuild').onclick=buildCoupons;
 el('btnCopy').onclick=async()=>{
   const t=el('out').value.trim(); if(!t) return alert('Сначала сформируй купоны');
@@ -245,12 +412,43 @@ el('btnCsv').onclick=()=>{
   const blob=new Blob([t],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='bbet_coupons.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
+el('btnClear').onclick=()=>{
+  tbody.innerHTML=''; el('out').value=''; el('stats').innerHTML=''; el('moBlock').innerHTML='';
+  renderGrid([]); el('raw').value='';
+};
 el('raw').addEventListener('input',()=>{
   const data=parseAny(el('raw').value||''); if(data.length){ renderGrid(data); }
 });
+el('btnAllDbl').onclick=()=>{
+  tbody.querySelectorAll('tr').forEach((tr,idx)=>{
+    tr.querySelectorAll('td.pick').forEach(td=>td.classList.remove('sel'));
+    const row = probs[idx]||[33,33,34];
+    const order = [{i:0,v:row[0]},{i:1,v:row[1]},{i:2,v:row[2]}].sort((a,b)=>b.v-a.v);
+    const top2 = [order[0].i, order[1].i];
+    top2.forEach(ci => tr.querySelectorAll('td.pick')[ci].classList.add('sel'));
+  });
+};
+el('btnOneTrpl').onclick=()=>{
+  const tr = tbody.querySelector('tr'); if(!tr) return;
+  tr.querySelectorAll('td.pick').forEach(td=>td.classList.add('sel'));
+};
 
-/* ==== старт ==== */
-renderGrid([]); // пустая сетка
+/* ==== АВТОСИНХРОН ==== */
+let timer=null;
+el('autoSync').addEventListener('change',()=>{
+  if(el('autoSync').checked){
+    timer=setInterval(()=>{
+      const id=(el('draw').value||'').trim(); if(id){ loadTB(id); }
+    }, 5*60*1000);
+    el('syncStatus').textContent = `Статус: 🟡 Автосинхронизация включена • ${nowStr()}`;
+  }else{
+    clearInterval(timer); timer=null;
+    el('syncStatus').textContent = `Статус: ⏸ Автосинхронизация выключена`;
+  }
+});
+
+/* ==== СТАРТ ==== */
+renderGrid([]);
 </script>
 </body>
 </html>
