@@ -3,119 +3,101 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>⚡ BBET Filter v5.2 — Adaptive Jackpot Engine</title>
+<title>⚡ BBET Filter v6.0 — Adaptive Jackpot Engine</title>
 <style>
 :root{
   --bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;
   --accent:#2563eb;--accent-bright:#3b82f6;
-  --good:#16a34a;--bad:#dc2626;--neutral:#ffffff;--text:#111827;
+  --good:#d8f5e3;--bad:#fde2e2;--neutral:#ffffff;--text:#111827;
 }
 html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial}
 header{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
 main{max-width:1180px;margin:0 auto;padding:16px}
 
-/* КАТЕГОРИИ */
-.cat-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-.cat-btn{
-  flex:1 1 60px;min-width:60px;
-  text-align:center;border:1px solid var(--line);
-  background:#1e293b;color:#e2e8f0;
-  padding:8px 0;border-radius:6px;cursor:pointer;
-  transition:all .25s ease;
-}
-.cat-btn:hover{background:#334155}
-.cat-btn.active{
-  background:var(--accent-bright);
-  box-shadow:0 0 8px #60a5fa;
-  transform:scale(1.05);
-  color:#fff;
-}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{color:var(--mut)}
+input[type=number]{background:#0b1427;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 8px;width:90px}
+.small{font-size:12px;color:var(--mut)}
 
-/* ФИЛЬТРЫ */
-.filters{
-  display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;
-  align-items:center
+/* Категория: компактный выдвижной блок */
+.catWrap{position:relative}
+.catToggle{background:#1e293b;border:1px solid var(--line);color:#e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer}
+.catPanel{
+  position:absolute;z-index:5;top:44px;left:0;background:#0b1427;border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;min-width:260px;display:none;box-shadow:0 10px 24px rgba(0,0,0,.35)
 }
-.filters label{color:var(--mut);font-size:13px}
-.filters input{width:50px;border:1px solid var(--line);border-radius:6px;background:#0b1427;color:var(--fg);padding:4px 6px;text-align:center}
+.catPanel.open{display:block}
+.catPanel .title{font-size:12px;color:#9fb3d9;margin-bottom:6px}
+.catPanel .slider{display:flex;align-items:center;gap:10px}
+input[type=range]{width:200px}
 
-/* КНОПКИ */
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;height:38px;padding:0 14px;cursor:pointer;transition:.2s}
+/* Кнопки */
+.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;height:38px;padding:0 14px;cursor:pointer}
 .btn.gray{background:#475569}
 .btn:hover{background:var(--accent-bright)}
 
-/* ТАБЛИЦА */
-table{width:100%;border-collapse:collapse;margin-top:8px}
+/* Таблица */
+table{width:100%;border-collapse:collapse;margin-top:12px}
 th,td{border:1px solid var(--line);padding:6px;text-align:center}
 th:first-child,td:first-child{width:36px}
 th.name,td.name{text-align:left}
 td.pick{
-  cursor:pointer;
-  background:var(--neutral);
-  color:var(--text);
-  font-weight:600;
-  user-select:none;
-  position:relative;
-  transition:background-color 3s ease-in-out,transform .2s ease;
+  cursor:pointer;background:var(--neutral);color:var(--text);font-weight:600;user-select:none;position:relative;
+  transition:background-color 0.3s ease,transform .15s ease, box-shadow .15s ease;
 }
 td.pick .main{font-size:16px;line-height:1}
 td.pick .sub{font-size:11px;opacity:.85}
-td.pick .delta{font-size:11px;opacity:.9;margin-top:2px}
+td.pick:hover{box-shadow:0 0 0 2px rgba(37,99,235,.15) inset}
 
-/* ВЫБРАННАЯ */
+/* Выбор: ярко видно */
 td.pick.active{
-  background-color:var(--accent)!important;
-  color:#fff!important;
+  background-color:var(--accent)!important;color:#fff!important;
+  transform:scale(1.02);
   box-shadow:0 0 8px var(--accent-bright);
-  transform:scale(1.03);
-  transition:all 0.25s ease-in-out;
 }
-td.pick.active::after{
-  content:"✅";
-  position:absolute;
-  top:4px;right:4px;
-  font-size:12px;
-}
+td.pick.active::after{content:"✅";position:absolute;top:4px;right:6px;font-size:12px}
 
-/* ПОДСВЕТКА */
-td.good{background:hsl(155,60%,80%)}
-td.bad{background:hsl(0,70%,90%)}
+/* Подсветка оценок (мягкая) */
+td.good{background:var(--good)}
+td.bad{background:var(--bad)}
 td.neutral{background:#fff}
 
-/* ПРОЧЕЕ */
-textarea{width:100%;min-height:100px;background:#0b1427;border:1px solid var(--line);color:#e2e8f0;border-radius:8px;padding:8px}
-.status{margin-top:6px;font-size:12px;color:var(--mut)}
+/* Низ */
+textarea{width:100%;min-height:120px;background:#0b1427;border:1px solid var(--line);color:#e2e8f0;border-radius:8px;padding:8px}
 .stats{margin-top:6px;color:var(--mut)}
-.hint{font-size:12px;color:#9fb3d9;margin-top:6px}
+.status{margin-top:4px;color:var(--mut);font-size:12px}
 </style>
 </head>
 <body>
-<header>⚡ BBET Filter v5.2 — Adaptive Jackpot Engine</header>
+<header>⚡ BBET Filter v6.0 — Adaptive Jackpot Engine</header>
 <main>
 
-<!-- Категории -->
-<div class="cat-row" id="catRow">
-  <div class="cat-btn" data-cat="15">15</div>
-  <div class="cat-btn" data-cat="14">14</div>
-  <div class="cat-btn active" data-cat="13">13</div>
-  <div class="cat-btn" data-cat="12">12</div>
-  <div class="cat-btn" data-cat="11">11</div>
-  <div class="cat-btn" data-cat="10">10</div>
-  <div class="cat-btn" data-cat="9">9</div>
+<!-- Верхняя панель -->
+<div class="row">
+  <div class="catWrap">
+    <button class="catToggle" id="catBtn">Категория: <b id="catLabel">13</b> ▾</button>
+    <div class="catPanel" id="catPanel">
+      <div class="title">Выбери категорию (9–15):</div>
+      <div class="slider">
+        <span>9</span>
+        <input id="catRange" type="range" min="9" max="15" step="1" value="13">
+        <span>15</span>
+      </div>
+      <div class="small">Активна: <b id="catNow">13</b>. После выбора панель закроется.</div>
+    </div>
+  </div>
+
+  <label>Ставка за купон (₽)
+    <input id="stake" type="number" min="1" step="1" value="30">
+  </label>
+
+  <button class="btn gray" id="btnSync">🔄 Синхронизировать тираж (Балбет)</button>
+  <span class="small" id="syncHint">Пока демо-данные. Завтра подключим парсер Балбет.</span>
 </div>
 
-<!-- Фильтры -->
-<div class="filters">
-  <label>П1 от <input id="min1" type="number" min="0" max="15"> до <input id="max1" type="number" min="0" max="15"></label>
-  <label>Х от <input id="minX" type="number" min="0" max="15"> до <input id="maxX" type="number" min="0" max="15"></label>
-  <label>П2 от <input id="min2" type="number" min="0" max="15"> до <input id="max2" type="number" min="0" max="15"></label>
-  <label>Антипаттерн <input id="antiPattern" type="checkbox"></label>
-</div>
-
-<!-- Кнопки -->
-<div class="toolbar">
-  <button class="btn" id="btnBuild">⚙️ Сформировать</button>
+<!-- Кнопки действий -->
+<div class="row" style="margin-top:8px">
+  <button class="btn" id="btnBuild">⚙️ Сформировать купоны</button>
   <button class="btn gray" id="btnCsv">💾 Экспорт CSV</button>
   <button class="btn gray" id="btnClear">🧹 Очистить</button>
 </div>
@@ -126,83 +108,161 @@ textarea{width:100%;min-height:100px;background:#0b1427;border:1px solid var(--l
   <tbody></tbody>
 </table>
 
-<div class="hint">🟩 Уверенный исход • ⚪ Нейтрально • 🟥 Избегать. Клик фиксирует выбор (подсветка + галочка).</div>
-
-<textarea id="out" placeholder="Одна строка — один купон (1;X;2;...)"></textarea>
-<div class="stats" id="stats"></div>
-<div class="status" id="status"></div>
+<textarea id="out" placeholder="Каждая строка — один купон. Формат: 30; 2;2;2;2;..."></textarea>
+<div class="stats" id="stats">Купонов: 0 • Сумма: 0 ₽</div>
+<div class="status" id="status">Данные: демо. Обновим парсером Балбет.</div>
 
 </main>
 
 <script>
-const el=id=>document.getElementById(id);
-const tbody=document.querySelector('#grid tbody');
-let data=null,locked={},currentCat=13;
-
-// демо данные
-const demoData=[
-  {match:"Arsenal — Chelsea",p:[42,28,30]},
-  {match:"Inter — Milan",p:[44,27,29]},
-  {match:"PSG — Lyon",p:[59,24,17]},
-  {match:"Real Madrid — Betis",p:[63,22,15]},
-  {match:"Bayern — Dortmund",p:[48,26,26]},
-  {match:"Liverpool — Newcastle",p:[51,25,24]},
-  {match:"Juventus — Napoli",p:[46,29,25]},
-  {match:"Ajax — Feyenoord",p:[40,29,31]},
-  {match:"Benfica — Porto",p:[43,27,30]},
-  {match:"Marseille — Nice",p:[37,32,31]},
-  {match:"Celtic — Rangers",p:[41,30,29]},
-  {match:"Atletico — Sevilla",p:[47,28,25]},
-  {match:"Roma — Lazio",p:[39,33,28]},
-  {match:"Monaco — Lille",p:[44,27,29]},
-  {match:"Sporting — Braga",p:[45,28,27]}
+/* ======= демо-данные (вместо парсера, подключим завтра) ======= */
+const demo = [
+  {match:"Arsenal — Chelsea", probs:[42,28,30]},
+  {match:"Inter — Milan", probs:[44,27,29]},
+  {match:"PSG — Lyon", probs:[59,24,17]},
+  {match:"Real Madrid — Betis", probs:[63,22,15]},
+  {match:"Bayern — Dortmund", probs:[48,26,26]},
+  {match:"Liverpool — Newcastle", probs:[51,25,24]},
+  {match:"Juventus — Napoli", probs:[46,29,25]},
+  {match:"Ajax — Feyenoord", probs:[40,29,31]},
+  {match:"Benfica — Porto", probs:[43,27,30]},
+  {match:"Marseille — Nice", probs:[37,32,31]},
+  {match:"Celtic — Rangers", probs:[41,30,29]},
+  {match:"Atletico — Sevilla", probs:[47,28,25]},
+  {match:"Roma — Lazio", probs:[39,33,28]},
+  {match:"Monaco — Lille", probs:[44,27,29]},
+  {match:"Sporting — Braga", probs:[45,28,27]}
 ];
 
-function render(){
+/* ======= состояние ======= */
+let matches = JSON.parse(JSON.stringify(demo)); // [{match, probs[1,X,2]}]
+let picks = Array.from({length:15}, ()=>({ '1':false,'X':false,'2':false })); // флаги выбора
+let stake = 30;
+let category = 13;
+
+/* ======= UI ======= */
+const tbody = document.querySelector('#grid tbody');
+const el = id => document.getElementById(id);
+
+function renderTable(){
   tbody.innerHTML='';
-  demoData.forEach((m,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${i+1}</td><td class="name">${m.match}</td>`;
-    ['1','X','2'].forEach((lab,idx)=>{
+  matches.forEach((m, i)=>{
+    const tr = document.createElement('tr');
+    const tdIdx = document.createElement('td'); tdIdx.textContent = (i+1);
+    const tdName= document.createElement('td'); tdName.className='name'; tdName.textContent = m.match;
+    tr.appendChild(tdIdx); tr.appendChild(tdName);
+
+    ['1','X','2'].forEach((lab, idx)=>{
       const td=document.createElement('td');
-      const val=m.p[idx];
-      let cls='neutral';
-      if(val>50) cls='good'; else if(val<25) cls='bad';
-      td.className='pick '+cls+(locked[i]===lab?' active':'');
-      td.innerHTML=`<div class="main">${lab} — ${val}%</div><div class="sub">${cls==='good'?'уверенно':' '}</div>`;
-      td.onclick=()=>{delete locked[i]; if(!td.classList.contains('active')) locked[i]=lab; render();};
+      const val=m.probs[idx];
+      // мягкая фоновая подсветка по вероятности
+      let cls='neutral'; if(val>50) cls='good'; else if(val<25) cls='bad';
+      td.className = `pick ${cls}` + (picks[i][lab] ? ' active' : '');
+      td.title = `Матч ${i+1}: ${m.match}\nИсход ${lab} — ${val}%`;
+      td.innerHTML = `<div class="main">${lab} — ${val}%</div><div class="sub">${picks[i][lab]?'выбрано':''}</div>`;
+      td.onclick = ()=>{ picks[i][lab] = !picks[i][lab]; renderTable(); updateStats(); };
       tr.appendChild(td);
     });
+
     tbody.appendChild(tr);
   });
-  el('stats').textContent=`Категория ${currentCat} • Матчей: ${demoData.length} • Выбрано исходов: ${Object.keys(locked).length}`;
 }
 
-// КАТЕГОРИИ
-document.querySelectorAll('.cat-btn').forEach(b=>{
-  b.onclick=()=>{
-    document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    currentCat=parseInt(b.dataset.cat);
-    render();
-  };
+function buildCoupons(){
+  // собираем множества по матчу: если ничего не нажато — берём все 3 (как ты хотел)
+  const sets = picks.map(p=>{
+    const selected = Object.entries(p).filter(([,v])=>v).map(([k])=>k);
+    return selected.length ? selected : ['1','X','2'];
+  });
+
+  // комбинируем (без символов 1X/X2 — только стандартная строка из 15 символов)
+  const HARD_LIMIT = 100000; // чтобы не убить браузер
+  let res = [[]];
+  for(const s of sets){
+    const next=[];
+    for(const r of res){
+      for(const v of s){
+        next.push(r.concat(v));
+        if(next.length>HARD_LIMIT){ res=next; break; }
+      }
+      if(next.length>HARD_LIMIT) break;
+    }
+    res = next;
+    if(res.length>HARD_LIMIT) break;
+  }
+
+  // ограничение по категории (целевое число купонов)
+  const target = targetByCategory(category, res.length);
+  const out = res.slice(0, target).map(row => `${stake}; ${row.join(';')}`).join('\n');
+
+  el('out').value = out || '(ничего не получилось — уменьшите ограничения)';
+  updateStats(res.slice(0, target).length);
+}
+
+function targetByCategory(cat, theoretical){
+  // эмпирическое ограничение под “как на тотобриф” (можем подкорректировать)
+  const map={15:5000,14:4000,13:12000,12:25000,11:50000,10:90000,9:150000};
+  const t = map[cat] || 12000;
+  return Math.min(theoretical, t);
+}
+
+function exportCsv(){
+  const t=el('out').value.trim();
+  if(!t){ alert('Сначала сформируй купоны'); return; }
+  const blob=new Blob([t],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='bbet_coupons.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function updateStats(currentCount=0){
+  const sum = currentCount * stake;
+  el('stats').textContent = `Купонов: ${currentCount.toLocaleString('ru-RU')} • Ставка: ${stake} ₽ • Сумма: ${sum.toLocaleString('ru-RU')} ₽ • Категория ${category}`;
+}
+
+/* ======= Категория (ползунок) ======= */
+(function(){
+  const btn = el('catBtn');
+  const panel = el('catPanel');
+  const rng = el('catRange');
+  const lab = el('catLabel');
+  const now = el('catNow');
+  btn.onclick = ()=> panel.classList.toggle('open');
+  rng.addEventListener('input', ()=>{
+    now.textContent = rng.value;
+  });
+  rng.addEventListener('change', ()=>{
+    category = parseInt(rng.value,10);
+    lab.textContent = category;
+    panel.classList.remove('open');
+    updateStats( (el('out').value.trim().length) ? el('out').value.trim().split('\n').length : 0 );
+  });
+})();
+
+/* ======= Ставка ======= */
+el('stake').addEventListener('input', ()=>{
+  const v = parseInt(el('stake').value,10);
+  stake = Number.isFinite(v) && v>0 ? v : 30;
+  // пересчёт суммы если купоны уже сформированы
+  const lines = el('out').value.trim()? el('out').value.trim().split('\n').length : 0;
+  updateStats(lines);
 });
 
-// КНОПКИ
-el('btnBuild').onclick=()=>{
-  const coupons=demoData.map((_,i)=>locked[i]||'-');
-  el('out').value=coupons.join(';');
-};
-el('btnCsv').onclick=()=>{
-  const blob=new Blob([el('out').value],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='bbet_coupons.csv';a.click();
-};
-el('btnClear').onclick=()=>{
-  locked={};el('out').value='';render();
+/* ======= Заглушка парсера Балбет (вкрутим завтра) ======= */
+el('btnSync').onclick = ()=>{
+  // тут завтра подключим cookie + fetch HTML с Балбет и распарсим список матчей
+  // сейчас просто мягко перерисуем демо и покажем статус
+  renderTable();
+  el('status').textContent = 'Синхронизация: заглушка (демо). Готов к подключению парсера Балбет.';
 };
 
-render();
+/* ======= Кнопки ======= */
+el('btnBuild').onclick = buildCoupons;
+el('btnCsv').onclick   = exportCsv;
+el('btnClear').onclick = ()=>{ picks = Array.from({length:15}, ()=>({ '1':false,'X':false,'2':false })); el('out').value=''; renderTable(); updateStats(0); };
+
+/* ======= Старт ======= */
+renderTable();
+updateStats(0);
 </script>
 </body>
 </html>
