@@ -3,452 +3,309 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>⚡ BBET Engine v5.0a — Intelligent System Builder (Aligned UI)</title>
+<title>BBET Filter v5.1 — Front-only (AutoSync JSON)</title>
 <style>
   :root{
-    --bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;--btn:#2563eb;--btn2:#475569;
-    --red:#dc2626;--sel:#22d3ee;--cell:#ffffff;--text:#111827;
+    --bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;
+    --text:#0b1220;--outline:#22d3ee;
   }
   html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  header{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600}
-  main{max-width:1120px;margin:0 auto;padding:16px}
+  header{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
+  main{max-width:1160px;margin:0 auto;padding:16px}
+  .status{font-size:12px;color:var(--mut);margin-top:6px}
+  .toolbar{display:grid;grid-template-columns: repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:12px}
+  .btn{background:#2563eb;color:#fff;border:none;border-radius:10px;height:40px;padding:0 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .btn.gray{background:#475569}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{border:1px solid var(--line);padding:8px;text-align:center}
+  th:first-child,td:first-child{width:46px}
+  th.name,td.name{text-align:left}
+  /* клетка исхода */
+  td.pick{
+    background:#ffffff;color:var(--text);font-weight:700;user-select:none;position:relative;
+    transition: background-color 3.5s ease-in-out, box-shadow .2s ease;
+  }
+  td.pick .main{font-size:18px;line-height:1}
+  td.pick .sub{display:block;font-size:11px;font-weight:600;opacity:.9;margin-top:2px}
+  td.pick .delta{font-size:11px;opacity:.95;margin-top:2px}
+  td.pick.active{outline:2px solid var(--outline);outline-offset:-2px}
+  td.good{ color:#072214;}
+  td.bad{  color:#2c0b0b;}
+  .hint{font-size:12px;color:#9fb3d9;margin-top:8px}
   .muted{color:var(--mut)}
-  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-  input,button,select,textarea{font:inherit}
-  input,select,textarea{background:#0b1427;border:1px solid var(--line);color:#fff;border-radius:10px;padding:8px 10px}
-  input[type="number"]{text-align:center}
-  textarea{width:100%;min-height:110px}
-  .btn{background:var(--btn);color:#fff;border:none;border-radius:10px;height:40px;padding:0 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-  .btn.gray{background:var(--btn2)}
-  .btn:active{transform:translateY(1px)}
-  table{width:100%;border-collapse:collapse;margin-top:10px}
-  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
-  th:first-child,td:first-child{text-align:left;width:40px}
-  td.pick{cursor:pointer;background:var(--cell);color:var(--text);font-weight:600;user-select:none}
-  td.pick.sel{background:var(--red);color:#fff;outline:2px solid var(--sel)}
-  #out{width:100%;min-height:160px;margin-top:10px}
-  #stats{margin-top:8px;color:var(--mut)}
-  label.inline{display:flex;align-items:center;gap:8px}
-  .status{font-size:12px;color:var(--mut)}
-  .badge{display:inline-block;background:#1f2a44;color:#bcd3ff;border:1px solid #334a7a;border-radius:999px;padding:2px 8px;margin-left:6px}
-  .hint{font-size:12px;color:#9fb3d9;margin-top:6px}
-
-  /* Aligned toolbars */
-  .toolbar{
-    display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
-    gap:10px;
-    margin-top:12px
-  }
-  .toolbar .btn{width:100%}
-
-  /* Aligned filters grid */
-  .filters{
-    display:grid;
-    grid-template-columns: repeat(6, minmax(170px,1fr));
-    gap:10px;
-    align-items:center;
-    margin-top:12px
-  }
-  .filters span,
-  .filters label{display:flex;align-items:center;gap:8px;white-space:nowrap}
-  .num-pair{display:flex;gap:6px}
-  .w60{width:60px}
-  .w80{width:80px}
-  .w110{width:110px}
-  .w200{width:200px}
-
-  /* Header row alignment */
-  .controls{
-    display:grid;
-    grid-template-columns: 220px 200px 1fr;
-    gap:12px;
-    align-items:center;
-  }
-  .controls .right{display:flex;gap:12px;align-items:center;justify-content:flex-end}
-  @media (max-width: 840px){
-    .controls{grid-template-columns: 1fr}
-    .controls .right{justify-content:flex-start;flex-wrap:wrap}
-    .filters{grid-template-columns: repeat(2, minmax(170px,1fr))}
-  }
+  textarea{width:100%;min-height:130px;background:#0b1427;border:1px solid var(--line);color:#e2e8f0;border-radius:10px;padding:8px 10px}
+  .bottom{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
 </style>
 </head>
 <body>
-<header>⚡ BBET Engine v5.0a — Intelligent System Builder (Aligned UI)</header>
+<header>⚡ BBET Filter v5.1 — “Jackpot Confidence Mapping” (Front-only)</header>
 <main>
 
-<!-- Управление / Импорт -->
-<div class="controls">
-  <div class="row">
-    <input id="draw" type="number" class="w200" placeholder="№ тиража (например 1484)">
-    <button id="btnLoad" class="btn">📡 Импорт с TotoBrief</button>
-  </div>
-  <div class="row">
-    <textarea id="raw" placeholder="Вставь HTML/CSV/текст. Поддерживается формат строк: 49/38/22" style="width:100%;min-height:80px"></textarea>
-  </div>
-  <div class="right">
-    <label class="inline"><input id="autoSync" type="checkbox"> Автосинхронизация (5 мин)</label>
-    <span id="syncStatus" class="status">Статус: —</span>
-  </div>
-</div>
+<div class="status" id="conn">🔄 Загрузка данных…</div>
 
-<!-- Панель параметров -->
-<div class="filters">
-  <span>Категория
-    <select id="cat">
-      <option>14</option><option selected>13</option>
-      <option>12</option><option>11</option><option>10</option><option>9</option>
-    </select>
-  </span>
-
-  <span>П1
-    <span class="num-pair">
-      <input id="min1" type="number" min="0" max="15" class="w60" placeholder="мин">
-      <input id="max1" type="number" min="0" max="15" class="w60" placeholder="макс">
-    </span>
-  </span>
-
-  <span>Х
-    <span class="num-pair">
-      <input id="minX" type="number" min="0" max="15" class="w60" placeholder="мин">
-      <input id="maxX" type="number" min="0" max="15" class="w60" placeholder="макс">
-    </span>
-  </span>
-
-  <span>П2
-    <span class="num-pair">
-      <input id="min2" type="number" min="0" max="15" class="w60" placeholder="мин">
-      <input id="max2" type="number" min="0" max="15" class="w60" placeholder="макс">
-    </span>
-  </span>
-
-  <label class="inline">Серии 1≤ <input id="st1" type="number" min="0" max="15" class="w60"></label>
-  <label class="inline">X≤ <input id="stX" type="number" min="0" max="15" class="w60"></label>
-  <label class="inline">2≤ <input id="st2" type="number" min="0" max="15" class="w60"></label>
-
-  <label class="inline"><input id="evenXon" type="checkbox"> Лимит Х на чётных:</label>
-  <input id="evenX" type="number" min="0" max="15" class="w60">
-
-  <span>Уклон
-    <select id="bias" class="w110">
-      <option value="none">Без уклона</option>
-      <option value="home">П1</option>
-      <option value="draw">Х</option>
-      <option value="away">П2</option>
-    </select>
-  </span>
-
-  <span>Уникальность
-    <input id="uniq" type="number" min="0" max="1" step="0.05" value="0.2" class="w80">
-  </span>
-
-  <span>Жёсткий лимит
-    <input id="limit" type="number" value="6000" class="w110">
-  </span>
-</div>
-
-<!-- Кнопки управления -->
 <div class="toolbar">
-  <button id="btnBuild" class="btn">⚙️ Сформировать</button>
-  <button id="btnCopy" class="btn gray">📋 Скопировать</button>
-  <button id="btnCsv"  class="btn gray">💾 Экспорт CSV</button>
-  <button id="btnClear" class="btn gray">🧹 Очистить</button>
-  <button id="btnRefresh" class="btn gray">🔄 Обновить с сайта</button>
-  <button id="btnAllDbl" class="btn gray">🧰 Все двойники</button>
-  <button id="btnOneTrpl" class="btn gray">🧰 +1 тройник</button>
+  <button class="btn" id="btnBuild">⚙️ Сформировать</button>
+  <button class="btn gray" id="btnCsv">💾 Экспорт CSV</button>
+  <button class="btn gray" id="btnClear">🧹 Очистить</button>
 </div>
-<div class="hint">Кликай по ячейкам: 1 выбор = одиночный, 2 = двойник, 3 = тройник.</div>
 
-<!-- Таблица -->
 <table id="grid">
-  <thead><tr><th>#</th><th>1</th><th>X</th><th>2</th></tr></thead>
+  <thead>
+    <tr>
+      <th>#</th><th class="name">Матч</th><th>1</th><th>X</th><th>2</th>
+    </tr>
+  </thead>
   <tbody></tbody>
 </table>
 
-<textarea id="out" placeholder="Одна строка — один купон (1;X;2;...)."></textarea>
-<div id="stats"></div>
-<div id="moBlock" class="muted"></div>
+<div class="hint">Подсветка: 🟩 чем зеленее — тем выше уверенность (value + согласие рынка). ⚪ нейтрально. 🟥 избегать. Наведи — увидишь краткую причину. Клик по ячейке фиксирует выбор (синяя рамка).</div>
+
+<div class="bottom">
+  <textarea id="out" placeholder="Одна строка — один купон (1;X;2;...) — появляется после «Сформировать»."></textarea>
+  <div id="stats" class="muted"></div>
+  <div id="jackpot" class="muted"></div>
+</div>
 
 </main>
 
 <script>
-/* ==== УТИЛЫ ==== */
+/* ===== helpers ===== */
 const el = id => document.getElementById(id);
 const tbody = document.querySelector('#grid tbody');
-const toInt = v => {const n=parseInt(v,10);return Number.isFinite(n)?n:null;};
-function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
-function nowStr(){const d=new Date();return d.toLocaleString('ru-RU');}
+const clamp01 = x => Math.max(0, Math.min(1, x));
 
-/* ==== КОМПРЕССИЯ КАТЕГОРИЙ ==== */
-const K = { 14:12, 13:64, 12:210, 11:585, 10:1365, 9:4096 };
+/* ===== config ===== */
+const CONFIG = {
+  // автообновление (оставили 5 минут как согласовано)
+  refreshMs: 5*60*1000,
+  // пороги value (разница вероятностей рынка и модели)
+  thrGreenDelta: 0.05,
+  thrRedDelta:  -0.05,
+  thrNeutralAbs: 0.03,
+  // файл данных в той же папке
+  dataUrl: 'bbet_data.json',
+  // количество матчей
+  matches: 15,
+  K:{14:12,13:64,12:210,11:585,10:1365,9:4096}
+};
 
-/* ==== ФИЛЬТРЫ ==== */
-function rangesOk(picks, cfg){
-  const c={1:0,X:0,2:0}; picks.forEach(v=>c[v]++);
-  if(cfg.min1!=null && c[1]<cfg.min1) return false;
-  if(cfg.max1!=null && c[1]>cfg.max1) return false;
-  if(cfg.minX!=null && c.X<cfg.minX) return false;
-  if(cfg.maxX!=null && c.X>cfg.maxX) return false;
-  if(cfg.min2!=null && c[2]<cfg.min2) return false;
-  if(cfg.max2!=null && c[2]>cfg.max2) return false;
-  let s1=0,sx=0,s2=0,prev=null;
-  for(const v of picks){
-    if(v!==prev){s1=sx=s2=0;prev=v;}
-    if(v==='1'){s1++; if(cfg.st1!=null && s1>cfg.st1) return false;}
-    if(v==='X'){sx++; if(cfg.stX!=null && sx>cfg.stX) return false;}
-    if(v==='2'){s2++; if(cfg.st2!=null && s2>cfg.st2) return false;}
-  }
-  if(cfg.evenXon){
-    let ex=0; for(let i=1;i<=picks.length;i++) if(i%2===0 && picks[i-1]==='X') ex++;
-    if(cfg.evenX!=null && ex>cfg.evenX) return false;
-  }
-  if(cfg.anti){
-    for(let i=0;i+3<picks.length;i++){
-      const a=picks[i],b=picks[i+1],c2=picks[i+2],d=picks[i+3];
-      if(a===b && c2===d) return false;
-    }
-  }
-  return true;
-}
+/* ===== state ===== */
+let data = null;          // сырой JSON
+let probsMarket=[];       // [%] Betfair/exchange
+let probsModel=[];        // [%] Pinnacle/book
+let matchNames=[];        // ["Team A – Team B"]
+let lastSnapshot=[];      // прошлые цены для momentum
+let snapshot=[];          // текущие цены (odds)
 
-/* ==== ПАРСИНГ ==== */
-function parseHTML(html){
-  const doc = new DOMParser().parseFromString(html,'text/html');
-  const cells = [...doc.querySelectorAll('td,th')].map(x=>x.textContent.trim().replace(',','.'));
-  const nums = cells.map(x=>parseFloat(x)).filter(n=>Number.isFinite(n)&&n>=0&&n<=100);
-  return groupTo15x3(nums);
-}
-function parseText(txt){
-  const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  const rows = [];
-  for(const line of lines){
-    let parts = line.match(/\d{1,3}(?:[.,]\d+)?/g);
-    if(parts && parts.length>=3){
-      const triple = parts.slice(0,3).map(v=>parseFloat(v.replace(',','.')));
-      if(triple.every(n=>Number.isFinite(n) && n>=0 && n<=100)) rows.push(triple);
-      continue;
-    }
-  }
-  if(rows.length){ return rows.slice(0,15); }
-  const nums = (txt.replace(',', '.').match(/(?:^|[^0-9])(100|[1-9]?\d(?:\.\d+)?)(?=%?)(?!\d)/g)||[])
-               .map(s=>parseFloat(s)).filter(n=>n>=0&&n<=100);
-  return groupTo15x3(nums);
-}
-function groupTo15x3(nums){
-  const data=[]; for(let i=0;i<45 && i<nums.length; i+=3){ data.push([nums[i],nums[i+1],nums[i+2]]); if(data.length===15) break; }
-  return data;
-}
-function parseAny(txt){
-  if(!txt) return [];
-  if(txt.includes('<table')||txt.includes('<tr')||txt.includes('</td')) return parseHTML(txt);
-  return parseText(txt);
-}
-
-/* ==== ТАБЛИЦА ==== */
-let probs = [];
-function renderGrid(arr){
-  probs = arr.length ? arr : Array.from({length:15}, ()=>[33,33,34]);
-  tbody.innerHTML='';
-  for(let i=0;i<15;i++){
-    const row=probs[i];
-    const sorted = [...row].map((v,i)=>({v,i})).sort((a,b)=>b.v-a.v);
-    const top = sorted[0]?.i, second = sorted[1]?.i;
-    const cell = (val,colIdx,label) => {
-      let bg = '#ffffff', color='#111827';
-      if(colIdx===top){ bg='#d1fae5'; }
-      else if(colIdx===second){ bg='#fef3c7'; }
-      return `<td class="pick" data-col="${label}" style="background:${bg};color:${color}">${Math.round(val)}</td>`;
+/* ===== fetch & prepare ===== */
+async function loadData(){
+  try{
+    const r = await fetch(CONFIG.dataUrl, {cache:'no-store'});
+    const j = await r.json();
+    return j;
+  }catch(e){
+    // fallback демо
+    const make = i=>{
+      const base = 2.2+Math.random()*0.6;
+      const home = (base + (Math.random()*0.6-0.3));
+      const draw = (3.0  + (Math.random()*0.5-0.25));
+      const away = (base + (Math.random()*0.6-0.3));
+      const ex   = {home:home*0.98, draw:draw*1.02, away:away*1.05};
+      return {
+        home:`Team ${i+1}A`, away:`Team ${i+1}B`,
+        bookmaker:{home,draw,away},
+        exchange:{home:ex.home,draw:ex.draw,away:ex.away},
+        notes:["demo","volatility low","form +"]
+      };
     };
+    return {updated:new Date().toISOString(), matches:Array.from({length:CONFIG.matches},(_,i)=>make(i))};
+  }
+}
+
+function oddsToProbs(o1,oX,o2){
+  const p1=1/o1, pX=1/oX, p2=1/o2;
+  const s=p1+pX+p2; return [p1/s,pX/s,p2/s];
+}
+
+function prepare(j){
+  data = j;
+  probsMarket=[]; probsModel=[]; matchNames=[]; snapshot=[];
+  (j.matches||[]).slice(0,CONFIG.matches).forEach(m=>{
+    const oM = m.exchange||m.market||m.bookmaker; // если нет, возьмём что есть
+    const oB = m.bookmaker||m.model||m.exchange;
+    const [p1m,pXm,p2m] = oddsToProbs(oM.home,oM.draw,oM.away).map(x=>x*100);
+    const [p1b,pXb,p2b] = oddsToProbs(oB.home,oB.draw,oB.away).map(x=>x*100);
+    probsMarket.push([p1m,pXm,p2m]);
+    probsModel.push([p1b,pXb,p2b]);
+    matchNames.push(`${m.home} — ${m.away}`);
+    snapshot.push([oM.home,oM.draw,oM.away]);
+  });
+  if(!lastSnapshot.length) lastSnapshot = snapshot.map(r=>[...r]);
+}
+
+/* ===== analytics ===== */
+function momentum(i,j){
+  const prev = lastSnapshot[i]?.[j], cur = snapshot[i]?.[j];
+  if(!prev||!cur) return 0;
+  return Math.log(cur/prev); // <0 падение (хорошо), >0 рост (плохо)
+}
+function fmtPct(x){ return Math.round(x)+'%'; }
+function fmtDelta(d){ const v=d*100; return (v>=0?'+':'')+v.toFixed(1)+'%'; }
+
+function cellClassAndStyle(i,j){
+  const mk=(probsMarket[i]?.[j]||33)/100;
+  const md=(probsModel [i]?.[j]||33)/100;
+  const d = mk-md;
+  const mom = momentum(i,j);
+
+  // зелёная уверенность по дельте, насыщенность от |d|
+  if(d>=CONFIG.thrGreenDelta){
+    const power = clamp01((d-0.05)/0.15); // 0..1
+    const light = clamp01(0.92 - power*0.35);
+    return {cls:'pick good', style:`background-color:hsl(158deg,70%,${Math.round(light*100)}%);`, badge:'🟩', tip:`Value: ${fmtDelta(d)} · momentum ${mom.toFixed(3)}`};
+  }
+  // красная — минус EV либо рост цены
+  if(d<=CONFIG.thrRedDelta || mom>0.02){
+    const inten = clamp01(Math.max(-d,0.05)/0.15);
+    const light = clamp01(0.95 - inten*0.35);
+    return {cls:'pick bad', style:`background-color:hsl(0deg,75%,${Math.round(light*100)}%);`, badge:'🟥', tip:`Risk: ${fmtDelta(d)} · momentum ${mom.toFixed(3)}`};
+  }
+  // нейтрально
+  return {cls:'pick', style:'background-color:#ffffff;', badge:'⚪', tip:`Neutral: ${fmtDelta(d)} · momentum ${mom.toFixed(3)}`};
+}
+
+/* ===== UI render ===== */
+let locked={}; // {row:'1'|'X'|'2'}
+function render(){
+  tbody.innerHTML='';
+  for(let i=0;i<probsMarket.length;i++){
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td>${cell(row[0],0,'1')}${cell(row[1],1,'X')}${cell(row[2],2,'2')}`;
+
+    const cIdx=document.createElement('td'); cIdx.textContent=(i+1);
+    const cName=document.createElement('td'); cName.className='name'; cName.textContent=matchNames[i]||`Матч ${i+1}`;
+    tr.appendChild(cIdx); tr.appendChild(cName);
+
+    ['1','X','2'].forEach((lab,idx)=>{
+      const td=document.createElement('td');
+      const mk=probsMarket[i]?.[idx]??33;
+      const md=probsModel [i]?.[idx]??33;
+      const d=(mk-md)/100;
+      const {cls,style,badge,tip}=cellClassAndStyle(i,idx);
+      td.className=cls;
+      td.setAttribute('style',style);
+      if(locked[i]===lab) td.classList.add('active');
+      td.title = `${matchNames[i]}\n${lab}: market ${fmtPct(mk)} vs model ${fmtPct(md)}\n${tip}`;
+      td.innerHTML = `
+        <div class="main">${lab} — ${fmtPct(mk)}</div>
+        <span class="sub">модель ${fmtPct(md)}</span>
+        <div class="delta">${badge} Δ ${fmtDelta(d)}</div>
+      `;
+      td.onclick=()=>{ delete locked[i]; if(!td.classList.contains('active')) locked[i]=lab; render(); };
+      tr.appendChild(td);
+    });
+
     tbody.appendChild(tr);
   }
-  bindPicking();
+  updateSummary();
 }
-function bindPicking(){
-  tbody.querySelectorAll('td.pick').forEach(td=>{
-    td.onclick=()=>{ td.classList.toggle('sel'); };
-  });
-}
-
-/* ==== ИМПОРТ ==== */
-async function fetchViaAllOrigins(url){
-  const p = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-  const r = await fetch(p,{cache:'no-store'});
-  if(!r.ok) throw new Error('allorigins fail');
-  return await r.text();
-}
-async function loadTB(draw){
-  const url=`http://totobrief.ru/results/bbet/${draw}`;
-  try{
-    const txt=await fetchViaAllOrigins(url);
-    const data=parseHTML(txt);
-    if(!data.length) throw 0;
-    renderGrid(data); el('raw').value='';
-    el('syncStatus').textContent = `Статус: 🟢 Импортировано (тираж ${draw}) • ${nowStr()}`;
-  }catch{
-    try{
-      const alt=`https://r.jina.ai/http://totobrief.ru/results/bbet/${draw}`;
-      const txt=await fetch(alt,{cache:'no-store'}).then(r=>r.text());
-      const data=parseHTML(txt);
-      if(!data.length) throw 0;
-      renderGrid(data); el('raw').value='';
-      el('syncStatus').textContent = `Статус: 🟢 Импорт через fallback (тираж ${draw}) • ${nowStr()}`;
-    }catch{
-      alert('Не удалось импортировать. Вставь HTML/CSV/текст вручную.');
-      el('syncStatus').textContent = `Статус: 🔴 Ошибка импорта • ${nowStr()}`;
+function updateSummary(){
+  let greens=0, reds=0, total=0, confSum=0;
+  for(let i=0;i<probsMarket.length;i++){
+    for(let j=0;j<3;j++){
+      total++;
+      const mk=(probsMarket[i][j])/100, md=(probsModel[i][j])/100, d=mk-md, mom=momentum(i,j);
+      const isG = d>=CONFIG.thrGreenDelta && mom<=0.02;
+      const isR = d<=CONFIG.thrRedDelta || mom>0.02;
+      if(isG) greens++; if(isR) reds++;
+      const conf = clamp01(Math.max(0,d)/0.2); // грубая уверенность 0..1
+      confSum+=conf;
     }
   }
+  const jackpot = Math.round((confSum/total)*100);
+  el('jackpot').innerHTML = `💰 Jackpot Confidence: <b>${jackpot}%</b> • Зелёных сигналов: <b>${greens}</b> из <b>${total}</b> • Красных: <b>${reds}</b>`;
+  let msg='Нейтральная конфигурация.';
+  if(greens>=30) msg='🔥 Core Confidence Sequence — согласованность высокая.';
+  if(greens>=36) msg='💰 Jackpot Alignment Detected — конфигурация близка к идеальной.';
+  el('stats').textContent=msg;
 }
 
-/* ==== НАБОРЫ ==== */
-function selectedSets(bias='none', uniq=0){
-  const sets=[];
-  const biasMap = {none:{1:0,X:0,2:0}, home:{1:+0.07,X:-0.02,2:-0.05}, draw:{1:-0.05,X:+0.10,2:-0.05}, away:{1:-0.05,X:-0.02,2:+0.07}};
-  const b = biasMap[bias] || biasMap.none;
-  tbody.querySelectorAll('tr').forEach((tr,idx)=>{
-    const choices=[...tr.querySelectorAll('td.pick')].map((td,i)=>({lab:td.dataset.col, sel:td.classList.contains('sel'), p: (probs[idx]?.[i]??33)/100}));
-    const picked = choices.filter(c=>c.sel).map(c=>c.lab);
-    let avail = picked.length ? picked : ['1','X','2'];
-    const byPref = choices
-      .filter(c => avail.includes(c.lab))
-      .map(c => ({lab:c.lab, score: (c.p + (b[c.lab]||0)) + (uniq>0 ? -(uniq * (1-c.p)) : 0)}))
-      .sort((a,b)=>a.score - b.score)
-      .map(x=>x.lab);
-    sets.push(byPref);
-  });
-  return sets;
-}
-
-/* ==== КОМБИНАТОРИКА ==== */
-function combineOrdered(sets, hardLimit){
+/* ===== coupons ===== */
+function combineOrdered(sets, limit){
   let res=[[]];
   for(const s of sets){
     const next=[];
     for(const r of res){
       for(const v of s){
         const arr=r.concat(v); next.push(arr);
-        if(hardLimit && next.length>=hardLimit){ res=next; break; }
+        if(limit && next.length>=limit){ res=next; break; }
       }
-      if(hardLimit && next.length>=hardLimit) break;
+      if(limit && next.length>=limit) break;
     }
     res=next;
-    if(hardLimit && res.length>=hardLimit) break;
+    if(limit && res.length>=limit) break;
   }
   return res;
 }
+function setsFromColors(){
+  const sets=[];
+  for(let i=0;i<probsMarket.length;i++){
+    if(locked[i]){ sets.push([locked[i]]); continue; }
+    const mk=probsMarket[i], md=probsModel[i];
+    const delta=[mk[0]-md[0], mk[1]-md[1], mk[2]-md[2]].map(x=>x/100);
+    const order=['1','X','2'].map((lab,idx)=>({lab,d:delta[idx]})).sort((a,b)=>b.d-a.d);
 
-/* ==== МО ==== */
-function estimateMO(){
-  const spread = probs.map(r => {
-    const sorted=[...r].sort((a,b)=>b-a);
-    return (sorted[0]-sorted[1]);
-  });
-  const avgGap = spread.reduce((a,b)=>a+b,0)/spread.length/100;
-  const uniqFactor = parseFloat(el('uniq').value||0);
-  let mo = 1 + (0.08*(0.5-avgGap)) + (0.05*uniqFactor);
-  mo += (Math.random()*0.004-0.002);
-  return Math.max(0.85, Math.min(1.2, mo));
+    // классификация по текущему классу
+    const cls=[0,1,2].map(idx=>cellClassAndStyle(i,idx).cls);
+    if(cls.some(c=>c.includes('good'))){
+      const best = order.find(o=>cellClassAndStyle(i, o.lab==='1'?0:o.lab==='X'?1:2).cls.includes('good')) || order[0];
+      sets.push([best.lab]);
+    }else if(cls.every(c=>c.includes('bad'))){
+      sets.push([order[0].lab]);
+    }else{
+      sets.push([order[0].lab, order[1].lab]); // нейтральные — двойник
+    }
+  }
+  return sets;
 }
-function moVerdict(mo){
-  if(mo>=1.10) return '😎 Отличная работа';
-  if(mo>=1.01) return '🙂 Хорошая работа';
-  if(mo>=0.95) return '⚠️ Слабый пакет';
-  return '💀 Убыточный пакет';
-}
-
-/* ==== ПОСТРОЕНИЕ ==== */
 function buildCoupons(){
-  const cfg={
-    min1:toInt(el('min1').value), max1:toInt(el('max1').value),
-    minX:toInt(el('minX').value), maxX:toInt(el('maxX').value),
-    min2:toInt(el('min2').value), max2:toInt(el('max2').value),
-    st1:toInt(el('st1').value), stX:toInt(el('stX').value), st2:toInt(el('st2').value),
-    evenXon:el('evenXon').checked, evenX:toInt(el('evenX').value),
-    anti:el('antiPattern').checked
-  };
-  const cat=parseInt(el('cat').value,10);
-  const hardLimit=clamp(+el('limit').value||6000,1,50000);
-  const bias=el('bias').value||'none';
-  const uniq=parseFloat(el('uniq').value||0);
-
-  const sets=selectedSets(bias, uniq);
-  const sizes = sets.map(s=>s.length);
-  const D = sizes.filter(n=>n===2).length;
-  const T = sizes.filter(n=>n===3).length;
-  const S = 15 - D - T;
-  let theoretical = 1; for(const n of sizes) theoretical *= n;
-
-  const k = K[cat] || 64;
-  const target = Math.max(1, Math.floor(theoretical / k));
-
-  const raw = combineOrdered(sets, Math.min(hardLimit, target*3));
-  const filtered = raw.filter(r=>rangesOk(r,cfg));
-  let coupons = filtered.slice(0, target);
-  if(coupons.length < target && theoretical>filtered.length){
-    const all = combineOrdered(sets, Math.min(hardLimit, target*6)).filter(r=>rangesOk(r,cfg));
-    coupons = all.slice(0, target);
-  }
-
-  const list=coupons.map((c,i)=>`${i+1};${c.join(';')}`).join('\n');
-  el('out').value=list || '(ни один купон не получился — расширь выбор или ослабь фильтры)';
-
-  const count=coupons.length, money=count*30, pass=theoretical?((count/theoretical)*100).toFixed(2):'0.00';
-  const mo=estimateMO();
-  el('stats').innerHTML=`Категория <b>${cat}</b> • S:${S} D:${D} T:${T} • Теоретика: <b>${theoretical.toLocaleString('ru-RU')}</b> • Лимит по K: <b>${target.toLocaleString('ru-RU')}</b> • Выведено: <b>${count.toLocaleString('ru-RU')}</b> • Сумма: <b>${money.toLocaleString('ru-RU')} ₽</b> <span class="badge">K=${k}</span> <span class="badge">Доля: ${pass}%</span>`;
-  el('moBlock').innerHTML = `Математическое ожидание пакета: <b>${mo.toFixed(3)}</b><br>${moVerdict(mo)}`;
+  const sets=setsFromColors();
+  let theoretical=1; for(const s of sets) theoretical*=s.length;
+  const cat=13, k=CONFIG.K[cat]||64;
+  const target=Math.max(1, Math.floor(theoretical/k));
+  const raw=combineOrdered(sets, Math.min(target*3, 25000));
+  const coupons=raw.slice(0,target);
+  el('out').value = coupons.map((c,i)=>`${i+1};${c.join(';')}`).join('\n') || '(ничего не получилось — мало сигналов/слишком жёстко)';
+}
+function exportCsv(){
+  const t=el('out').value.trim(); if(!t){ alert('Сначала сформируй купоны'); return; }
+  const blob=new Blob([t],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='bbet_coupons.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
-/* ==== КНОПКИ ==== */
-el('btnLoad').onclick=()=>{const id=(el('draw').value||'').trim(); if(!id) return alert('Введи № тиража'); loadTB(id);};
-el('btnRefresh').onclick=()=>{const id=(el('draw').value||'').trim(); if(!id) return alert('Введи № тиража'); loadTB(id);};
-el('btnBuild').onclick=buildCoupons;
-el('btnCopy').onclick=async()=>{
-  const t=el('out').value.trim(); if(!t) return alert('Сначала сформируй купоны');
-  try{ await navigator.clipboard.writeText(t); alert('Скопировано'); }catch{ alert('Не удалось скопировать (браузер ограничил буфер)'); }
-};
-el('btnCsv').onclick=()=>{
-  const t=el('out').value.trim(); if(!t) return alert('Сначала сформируй купоны');
-  const blob=new Blob([t],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='bbet_coupons.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-};
-el('btnClear').onclick=()=>{
-  tbody.innerHTML=''; el('out').value=''; el('stats').innerHTML=''; el('moBlock').innerHTML='';
-  renderGrid([]); el('raw').value='';
-};
-el('raw').addEventListener('input',()=>{
-  const data=parseAny(el('raw').value||''); if(data.length){ renderGrid(data); }
-});
-el('btnAllDbl').onclick=()=>{
-  tbody.querySelectorAll('tr').forEach((tr,idx)=>{
-    tr.querySelectorAll('td.pick').forEach(td=>td.classList.remove('sel'));
-    const row = probs[idx]||[33,33,34];
-    const order = [{i:0,v:row[0]},{i:1,v:row[1]},{i:2,v:row[2]}].sort((a,b)=>b.v-a.v);
-    const top2 = [order[0].i, order[1].i];
-    top2.forEach(ci => tr.querySelectorAll('td.pick')[ci].classList.add('sel'));
-  });
-};
-el('btnOneTrpl').onclick=()=>{
-  const tr = tbody.querySelector('tr'); if(!tr) return;
-  tr.querySelectorAll('td.pick').forEach(td=>td.classList.add('sel'));
-};
+/* ===== loop ===== */
+async function tick(){
+  el('conn').textContent='🔄 Обновление…';
+  const j = await loadData();
+  prepare(j);
+  render();
+  lastSnapshot = snapshot.map(r=>[...r]);
+  const t=new Date();
+  el('conn').textContent=`🟢 Обновлено: ${t.toLocaleTimeString('ru-RU')} • Следующее через 5 минут`;
+}
 
-/* ==== АВТОСИНХРОН ==== */
-let timer=null;
-el('autoSync').addEventListener('change',()=>{
-  if(el('autoSync').checked){
-    timer=setInterval(()=>{
-      const id=(el('draw').value||'').trim(); if(id){ loadTB(id); }
-    }, 5*60*1000);
-    el('syncStatus').textContent = `Статус: 🟡 Автосинхронизация включена • ${nowStr()}`;
-  }else{
-    clearInterval(timer); timer=null;
-    el('syncStatus').textContent = `Статус: ⏸ Автосинхронизация выключена`;
-  }
-});
+/* ===== init ===== */
+(function init(){
+  // старт
+  tick();
+  // автообновление (если JSON меняется на сервере — подхватим)
+  setInterval(tick, CONFIG.refreshMs);
 
-/* ==== СТАРТ ==== */
-renderGrid([]);
+  // кнопки
+  el('btnBuild').onclick=buildCoupons;
+  el('btnCsv').onclick=exportCsv;
+  el('btnClear').onclick=()=>{ locked={}; el('out').value=''; render(); };
+})();
 </script>
 </body>
 </html>
