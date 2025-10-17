@@ -1,70 +1,113 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>⚡BBET Filter v4.5 — Фильтрация тиражей</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>⚡ BBET Filter v4.6 — FullBrief Engine</title>
 <style>
-body{background:#0d1117;color:#f0f6fc;font-family:Arial,Helvetica,sans-serif;margin:0;padding:20px;text-align:center}
-h1{color:#58a6ff;font-size:1.4em;margin-bottom:15px}
-textarea{width:90%;max-width:600px;height:120px;background:#161b22;border:1px solid #30363d;color:#c9d1d9;padding:10px;border-radius:6px;font-size:14px}
-button{background:#238636;color:#fff;border:none;border-radius:6px;padding:10px 16px;font-size:15px;margin:6px;cursor:pointer}
-button:hover{background:#2ea043}
-select{background:#161b22;color:#fff;border:1px solid #30363d;border-radius:6px;padding:5px 10px}
-#result{margin-top:20px;white-space:pre-wrap;text-align:left;max-width:600px;margin-left:auto;margin-right:auto;padding:10px;border-radius:6px;background:#161b22;border:1px solid #30363d}
+body{background:#0f172a;color:#e2e8f0;font-family:system-ui;margin:0;padding:20px;line-height:1.4}
+h1{font-size:20px;margin-bottom:4px}
+.muted{opacity:.8;font-size:13px;margin-bottom:12px}
+textarea,input,button{font:inherit}
+textarea{width:100%;height:100px;background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:8px;padding:8px;margin-bottom:10px}
+button{border:none;border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn{background:#2563eb;color:#fff;margin:3px}
+.btn:hover{opacity:.9}
+select{background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:6px;padding:4px 6px}
+#out{width:100%;height:120px;background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:8px;margin-top:10px;padding:8px}
+#stats{margin-top:10px;font-size:13px;color:#9ca3af}
 </style>
 </head>
 <body>
-<h1>⚡ BBET Filter v4.5 — Фильтрация тиражей и купонов</h1>
-<textarea id="input" placeholder="Вставь HTML таблицу Totobrief или CSV данные:"></textarea><br>
-<label>Категория покрытия:
+<h1>⚡ BBET Filter v4.6 — FullBrief Engine</h1>
+<div class="muted">Импортируй тираж с Totobrief, выбери категорию покрытия и диапазон — получи точные купоны с расчётом стоимости.</div>
+
+<textarea id="input" placeholder="Вставь HTML таблицу Totobrief или CSV данные..."></textarea>
+<div>
+Категория покрытия:
 <select id="category">
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-<option value="13" selected>13</option>
-<option value="14">14</option>
 <option value="15">15</option>
-</select></label><br>
-<button onclick="generate()">📊 Сформировать купоны</button>
-<button onclick="copyResult()">📋 Скопировать</button>
-<button onclick="exportCSV()">⬇️ Экспорт CSV</button>
-<div id="result">Результат появится здесь...</div>
+<option value="14">14</option>
+<option value="13" selected>13</option>
+<option value="12">12</option>
+<option value="11">11</option>
+<option value="10">10</option>
+<option value="9">9</option>
+</select>
+</div>
+
+<div style="margin-top:10px">
+П1 от <input id="min1" type="number" min="0" max="15" style="width:50px">
+до <input id="max1" type="number" min="0" max="15" style="width:50px">
+❌ от <input id="minX" type="number" min="0" max="15" style="width:50px">
+до <input id="maxX" type="number" min="0" max="15" style="width:50px">
+П2 от <input id="min2" type="number" min="0" max="15" style="width:50px">
+до <input id="max2" type="number" min="0" max="15" style="width:50px">
+</div>
+
+<div style="margin-top:12px">
+<button class="btn" id="generate">⚙️ Сформировать купоны</button>
+<button class="btn" id="copy">📋 Скопировать</button>
+<button class="btn" id="export">💾 Экспорт CSV</button>
+</div>
+
+<textarea id="out" placeholder="Результат появится здесь..."></textarea>
+<div id="stats"></div>
 
 <script>
-function parseInput(text){
- let rows=text.trim().split(/\n/).map(r=>r.split(/\t|;/));
- return rows.filter(r=>r.length>=6);
+function parseInput(txt){
+  const rows = txt.trim().split(/\n/).map(l=>l.split(/[;\s,]+/).filter(Boolean));
+  return rows.filter(r=>r.length>=3);
 }
 
-function generate(){
- let txt=document.getElementById('input').value.trim();
- if(!txt){alert('Вставь данные Totobrief или CSV');return;}
- let data=parseInput(txt);
- let cat=parseInt(document.getElementById('category').value);
- let basePrice=30;
- let variants=Math.pow(2,15-cat);
- let total=basePrice*variants;
- let res="Категория "+cat+" (купонов: "+variants+", общая сумма: "+total+" ₽)\n\n";
- res+=data.map((r,i)=>`${i+1}. ${r[1]} vs ${r[2]} — 1:${r[3]} X:${r[4]} 2:${r[5]}`).join("\n");
- document.getElementById('result').innerText=res;
+function passesRange(arr,cfg){
+  const cnt={1:0,X:0,2:0};
+  arr.forEach(v=>{if(v==="1")cnt[1]++;if(v==="X")cnt.X++;if(v==="2")cnt[2]++;});
+  if(cfg.min1 && cnt[1]<cfg.min1)return false;
+  if(cfg.max1 && cnt[1]>cfg.max1)return false;
+  if(cfg.minX && cnt.X<cfg.minX)return false;
+  if(cfg.maxX && cnt.X>cfg.maxX)return false;
+  if(cfg.min2 && cnt[2]<cfg.min2)return false;
+  if(cfg.max2 && cnt[2]>cfg.max2)return false;
+  return true;
 }
 
-function copyResult(){
- let text=document.getElementById('result').innerText;
- navigator.clipboard.writeText(text);
- alert("Скопировано!");
+function generateCoupons(data,cat){
+  const base=30;
+  const variants=Math.pow(2,15-cat);
+  const total=base*variants;
+  const res=data.map((r,i)=>`${i+1}. ${r[0]} vs ${r[1]} — cat${cat}`);
+  return {text:res.join('\n'),variants,total};
 }
 
-function exportCSV(){
- let text=document.getElementById('result').innerText;
- let blob=new Blob([text],{type:"text/csv;charset=utf-8;"});
- let url=URL.createObjectURL(blob);
- let a=document.createElement("a");
- a.href=url;a.download="bbet_filter.csv";a.click();
- URL.revokeObjectURL(url);
-}
+generate.onclick=()=>{
+  const txt=document.getElementById('input').value;
+  if(!txt)return alert("Вставь данные Totobrief!");
+  const data=parseInput(txt);
+  const cat=parseInt(document.getElementById('category').value);
+  const cfg={
+    min1:+min1.value||null,max1:+max1.value||null,
+    minX:+minX.value||null,maxX:+maxX.value||null,
+    min2:+min2.value||null,max2:+max2.value||null
+  };
+  const filtered=data.filter(r=>passesRange(["1","X","2"],cfg));
+  const {text,variants,total}=generateCoupons(filtered,cat);
+  out.value=text;
+  stats.innerHTML=`Категория <b>${cat}</b> | Купонов: <b>${variants}</b> | Ставка: <b>${total} ₽</b>`;
+};
+
+copy.onclick=()=>{
+  navigator.clipboard.writeText(out.value);
+  alert("Скопировано!");
+};
+
+export.onclick=()=>{
+  const blob=new Blob([out.value],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="bbet_filter.csv";a.click();
+  URL.revokeObjectURL(url);
+};
 </script>
 </body>
 </html>
