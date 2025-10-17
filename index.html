@@ -3,309 +3,206 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BBET Filter v5.1 — Front-only (AutoSync JSON)</title>
+<title>⚡ BBET Filter v5.2 — Adaptive Jackpot Engine</title>
 <style>
-  :root{
-    --bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;
-    --text:#0b1220;--outline:#22d3ee;
-  }
-  html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  header{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
-  main{max-width:1160px;margin:0 auto;padding:16px}
-  .status{font-size:12px;color:var(--mut);margin-top:6px}
-  .toolbar{display:grid;grid-template-columns: repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:12px}
-  .btn{background:#2563eb;color:#fff;border:none;border-radius:10px;height:40px;padding:0 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-  .btn.gray{background:#475569}
-  table{width:100%;border-collapse:collapse;margin-top:12px}
-  th,td{border:1px solid var(--line);padding:8px;text-align:center}
-  th:first-child,td:first-child{width:46px}
-  th.name,td.name{text-align:left}
-  /* клетка исхода */
-  td.pick{
-    background:#ffffff;color:var(--text);font-weight:700;user-select:none;position:relative;
-    transition: background-color 3.5s ease-in-out, box-shadow .2s ease;
-  }
-  td.pick .main{font-size:18px;line-height:1}
-  td.pick .sub{display:block;font-size:11px;font-weight:600;opacity:.9;margin-top:2px}
-  td.pick .delta{font-size:11px;opacity:.95;margin-top:2px}
-  td.pick.active{outline:2px solid var(--outline);outline-offset:-2px}
-  td.good{ color:#072214;}
-  td.bad{  color:#2c0b0b;}
-  .hint{font-size:12px;color:#9fb3d9;margin-top:8px}
-  .muted{color:var(--mut)}
-  textarea{width:100%;min-height:130px;background:#0b1427;border:1px solid var(--line);color:#e2e8f0;border-radius:10px;padding:8px 10px}
-  .bottom{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+:root{
+  --bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;
+  --accent:#2563eb;--accent-bright:#3b82f6;
+  --good:#16a34a;--bad:#dc2626;--neutral:#ffffff;--text:#111827;
+}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+header{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
+main{max-width:1180px;margin:0 auto;padding:16px}
+
+/* КАТЕГОРИИ */
+.cat-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.cat-btn{
+  flex:1 1 60px;min-width:60px;
+  text-align:center;border:1px solid var(--line);
+  background:#1e293b;color:#e2e8f0;
+  padding:8px 0;border-radius:6px;cursor:pointer;
+  transition:all .25s ease;
+}
+.cat-btn:hover{background:#334155}
+.cat-btn.active{
+  background:var(--accent-bright);
+  box-shadow:0 0 8px #60a5fa;
+  transform:scale(1.05);
+  color:#fff;
+}
+
+/* ФИЛЬТРЫ */
+.filters{
+  display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;
+  align-items:center
+}
+.filters label{color:var(--mut);font-size:13px}
+.filters input{width:50px;border:1px solid var(--line);border-radius:6px;background:#0b1427;color:var(--fg);padding:4px 6px;text-align:center}
+
+/* КНОПКИ */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;height:38px;padding:0 14px;cursor:pointer;transition:.2s}
+.btn.gray{background:#475569}
+.btn:hover{background:var(--accent-bright)}
+
+/* ТАБЛИЦА */
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{border:1px solid var(--line);padding:6px;text-align:center}
+th:first-child,td:first-child{width:36px}
+th.name,td.name{text-align:left}
+td.pick{
+  cursor:pointer;
+  background:var(--neutral);
+  color:var(--text);
+  font-weight:600;
+  user-select:none;
+  position:relative;
+  transition:background-color 3s ease-in-out,transform .2s ease;
+}
+td.pick .main{font-size:16px;line-height:1}
+td.pick .sub{font-size:11px;opacity:.85}
+td.pick .delta{font-size:11px;opacity:.9;margin-top:2px}
+
+/* ВЫБРАННАЯ */
+td.pick.active{
+  background-color:var(--accent)!important;
+  color:#fff!important;
+  box-shadow:0 0 8px var(--accent-bright);
+  transform:scale(1.03);
+  transition:all 0.25s ease-in-out;
+}
+td.pick.active::after{
+  content:"✅";
+  position:absolute;
+  top:4px;right:4px;
+  font-size:12px;
+}
+
+/* ПОДСВЕТКА */
+td.good{background:hsl(155,60%,80%)}
+td.bad{background:hsl(0,70%,90%)}
+td.neutral{background:#fff}
+
+/* ПРОЧЕЕ */
+textarea{width:100%;min-height:100px;background:#0b1427;border:1px solid var(--line);color:#e2e8f0;border-radius:8px;padding:8px}
+.status{margin-top:6px;font-size:12px;color:var(--mut)}
+.stats{margin-top:6px;color:var(--mut)}
+.hint{font-size:12px;color:#9fb3d9;margin-top:6px}
 </style>
 </head>
 <body>
-<header>⚡ BBET Filter v5.1 — “Jackpot Confidence Mapping” (Front-only)</header>
+<header>⚡ BBET Filter v5.2 — Adaptive Jackpot Engine</header>
 <main>
 
-<div class="status" id="conn">🔄 Загрузка данных…</div>
+<!-- Категории -->
+<div class="cat-row" id="catRow">
+  <div class="cat-btn" data-cat="15">15</div>
+  <div class="cat-btn" data-cat="14">14</div>
+  <div class="cat-btn active" data-cat="13">13</div>
+  <div class="cat-btn" data-cat="12">12</div>
+  <div class="cat-btn" data-cat="11">11</div>
+  <div class="cat-btn" data-cat="10">10</div>
+  <div class="cat-btn" data-cat="9">9</div>
+</div>
 
+<!-- Фильтры -->
+<div class="filters">
+  <label>П1 от <input id="min1" type="number" min="0" max="15"> до <input id="max1" type="number" min="0" max="15"></label>
+  <label>Х от <input id="minX" type="number" min="0" max="15"> до <input id="maxX" type="number" min="0" max="15"></label>
+  <label>П2 от <input id="min2" type="number" min="0" max="15"> до <input id="max2" type="number" min="0" max="15"></label>
+  <label>Антипаттерн <input id="antiPattern" type="checkbox"></label>
+</div>
+
+<!-- Кнопки -->
 <div class="toolbar">
   <button class="btn" id="btnBuild">⚙️ Сформировать</button>
   <button class="btn gray" id="btnCsv">💾 Экспорт CSV</button>
   <button class="btn gray" id="btnClear">🧹 Очистить</button>
 </div>
 
+<!-- Таблица -->
 <table id="grid">
-  <thead>
-    <tr>
-      <th>#</th><th class="name">Матч</th><th>1</th><th>X</th><th>2</th>
-    </tr>
-  </thead>
+  <thead><tr><th>#</th><th class="name">Матч</th><th>1</th><th>X</th><th>2</th></tr></thead>
   <tbody></tbody>
 </table>
 
-<div class="hint">Подсветка: 🟩 чем зеленее — тем выше уверенность (value + согласие рынка). ⚪ нейтрально. 🟥 избегать. Наведи — увидишь краткую причину. Клик по ячейке фиксирует выбор (синяя рамка).</div>
+<div class="hint">🟩 Уверенный исход • ⚪ Нейтрально • 🟥 Избегать. Клик фиксирует выбор (подсветка + галочка).</div>
 
-<div class="bottom">
-  <textarea id="out" placeholder="Одна строка — один купон (1;X;2;...) — появляется после «Сформировать»."></textarea>
-  <div id="stats" class="muted"></div>
-  <div id="jackpot" class="muted"></div>
-</div>
+<textarea id="out" placeholder="Одна строка — один купон (1;X;2;...)"></textarea>
+<div class="stats" id="stats"></div>
+<div class="status" id="status"></div>
 
 </main>
 
 <script>
-/* ===== helpers ===== */
-const el = id => document.getElementById(id);
-const tbody = document.querySelector('#grid tbody');
-const clamp01 = x => Math.max(0, Math.min(1, x));
+const el=id=>document.getElementById(id);
+const tbody=document.querySelector('#grid tbody');
+let data=null,locked={},currentCat=13;
 
-/* ===== config ===== */
-const CONFIG = {
-  // автообновление (оставили 5 минут как согласовано)
-  refreshMs: 5*60*1000,
-  // пороги value (разница вероятностей рынка и модели)
-  thrGreenDelta: 0.05,
-  thrRedDelta:  -0.05,
-  thrNeutralAbs: 0.03,
-  // файл данных в той же папке
-  dataUrl: 'bbet_data.json',
-  // количество матчей
-  matches: 15,
-  K:{14:12,13:64,12:210,11:585,10:1365,9:4096}
-};
+// демо данные
+const demoData=[
+  {match:"Arsenal — Chelsea",p:[42,28,30]},
+  {match:"Inter — Milan",p:[44,27,29]},
+  {match:"PSG — Lyon",p:[59,24,17]},
+  {match:"Real Madrid — Betis",p:[63,22,15]},
+  {match:"Bayern — Dortmund",p:[48,26,26]},
+  {match:"Liverpool — Newcastle",p:[51,25,24]},
+  {match:"Juventus — Napoli",p:[46,29,25]},
+  {match:"Ajax — Feyenoord",p:[40,29,31]},
+  {match:"Benfica — Porto",p:[43,27,30]},
+  {match:"Marseille — Nice",p:[37,32,31]},
+  {match:"Celtic — Rangers",p:[41,30,29]},
+  {match:"Atletico — Sevilla",p:[47,28,25]},
+  {match:"Roma — Lazio",p:[39,33,28]},
+  {match:"Monaco — Lille",p:[44,27,29]},
+  {match:"Sporting — Braga",p:[45,28,27]}
+];
 
-/* ===== state ===== */
-let data = null;          // сырой JSON
-let probsMarket=[];       // [%] Betfair/exchange
-let probsModel=[];        // [%] Pinnacle/book
-let matchNames=[];        // ["Team A – Team B"]
-let lastSnapshot=[];      // прошлые цены для momentum
-let snapshot=[];          // текущие цены (odds)
-
-/* ===== fetch & prepare ===== */
-async function loadData(){
-  try{
-    const r = await fetch(CONFIG.dataUrl, {cache:'no-store'});
-    const j = await r.json();
-    return j;
-  }catch(e){
-    // fallback демо
-    const make = i=>{
-      const base = 2.2+Math.random()*0.6;
-      const home = (base + (Math.random()*0.6-0.3));
-      const draw = (3.0  + (Math.random()*0.5-0.25));
-      const away = (base + (Math.random()*0.6-0.3));
-      const ex   = {home:home*0.98, draw:draw*1.02, away:away*1.05};
-      return {
-        home:`Team ${i+1}A`, away:`Team ${i+1}B`,
-        bookmaker:{home,draw,away},
-        exchange:{home:ex.home,draw:ex.draw,away:ex.away},
-        notes:["demo","volatility low","form +"]
-      };
-    };
-    return {updated:new Date().toISOString(), matches:Array.from({length:CONFIG.matches},(_,i)=>make(i))};
-  }
-}
-
-function oddsToProbs(o1,oX,o2){
-  const p1=1/o1, pX=1/oX, p2=1/o2;
-  const s=p1+pX+p2; return [p1/s,pX/s,p2/s];
-}
-
-function prepare(j){
-  data = j;
-  probsMarket=[]; probsModel=[]; matchNames=[]; snapshot=[];
-  (j.matches||[]).slice(0,CONFIG.matches).forEach(m=>{
-    const oM = m.exchange||m.market||m.bookmaker; // если нет, возьмём что есть
-    const oB = m.bookmaker||m.model||m.exchange;
-    const [p1m,pXm,p2m] = oddsToProbs(oM.home,oM.draw,oM.away).map(x=>x*100);
-    const [p1b,pXb,p2b] = oddsToProbs(oB.home,oB.draw,oB.away).map(x=>x*100);
-    probsMarket.push([p1m,pXm,p2m]);
-    probsModel.push([p1b,pXb,p2b]);
-    matchNames.push(`${m.home} — ${m.away}`);
-    snapshot.push([oM.home,oM.draw,oM.away]);
-  });
-  if(!lastSnapshot.length) lastSnapshot = snapshot.map(r=>[...r]);
-}
-
-/* ===== analytics ===== */
-function momentum(i,j){
-  const prev = lastSnapshot[i]?.[j], cur = snapshot[i]?.[j];
-  if(!prev||!cur) return 0;
-  return Math.log(cur/prev); // <0 падение (хорошо), >0 рост (плохо)
-}
-function fmtPct(x){ return Math.round(x)+'%'; }
-function fmtDelta(d){ const v=d*100; return (v>=0?'+':'')+v.toFixed(1)+'%'; }
-
-function cellClassAndStyle(i,j){
-  const mk=(probsMarket[i]?.[j]||33)/100;
-  const md=(probsModel [i]?.[j]||33)/100;
-  const d = mk-md;
-  const mom = momentum(i,j);
-
-  // зелёная уверенность по дельте, насыщенность от |d|
-  if(d>=CONFIG.thrGreenDelta){
-    const power = clamp01((d-0.05)/0.15); // 0..1
-    const light = clamp01(0.92 - power*0.35);
-    return {cls:'pick good', style:`background-color:hsl(158deg,70%,${Math.round(light*100)}%);`, badge:'🟩', tip:`Value: ${fmtDelta(d)} · momentum ${mom.toFixed(3)}`};
-  }
-  // красная — минус EV либо рост цены
-  if(d<=CONFIG.thrRedDelta || mom>0.02){
-    const inten = clamp01(Math.max(-d,0.05)/0.15);
-    const light = clamp01(0.95 - inten*0.35);
-    return {cls:'pick bad', style:`background-color:hsl(0deg,75%,${Math.round(light*100)}%);`, badge:'🟥', tip:`Risk: ${fmtDelta(d)} · momentum ${mom.toFixed(3)}`};
-  }
-  // нейтрально
-  return {cls:'pick', style:'background-color:#ffffff;', badge:'⚪', tip:`Neutral: ${fmtDelta(d)} · momentum ${mom.toFixed(3)}`};
-}
-
-/* ===== UI render ===== */
-let locked={}; // {row:'1'|'X'|'2'}
 function render(){
   tbody.innerHTML='';
-  for(let i=0;i<probsMarket.length;i++){
+  demoData.forEach((m,i)=>{
     const tr=document.createElement('tr');
-
-    const cIdx=document.createElement('td'); cIdx.textContent=(i+1);
-    const cName=document.createElement('td'); cName.className='name'; cName.textContent=matchNames[i]||`Матч ${i+1}`;
-    tr.appendChild(cIdx); tr.appendChild(cName);
-
+    tr.innerHTML=`<td>${i+1}</td><td class="name">${m.match}</td>`;
     ['1','X','2'].forEach((lab,idx)=>{
       const td=document.createElement('td');
-      const mk=probsMarket[i]?.[idx]??33;
-      const md=probsModel [i]?.[idx]??33;
-      const d=(mk-md)/100;
-      const {cls,style,badge,tip}=cellClassAndStyle(i,idx);
-      td.className=cls;
-      td.setAttribute('style',style);
-      if(locked[i]===lab) td.classList.add('active');
-      td.title = `${matchNames[i]}\n${lab}: market ${fmtPct(mk)} vs model ${fmtPct(md)}\n${tip}`;
-      td.innerHTML = `
-        <div class="main">${lab} — ${fmtPct(mk)}</div>
-        <span class="sub">модель ${fmtPct(md)}</span>
-        <div class="delta">${badge} Δ ${fmtDelta(d)}</div>
-      `;
-      td.onclick=()=>{ delete locked[i]; if(!td.classList.contains('active')) locked[i]=lab; render(); };
+      const val=m.p[idx];
+      let cls='neutral';
+      if(val>50) cls='good'; else if(val<25) cls='bad';
+      td.className='pick '+cls+(locked[i]===lab?' active':'');
+      td.innerHTML=`<div class="main">${lab} — ${val}%</div><div class="sub">${cls==='good'?'уверенно':' '}</div>`;
+      td.onclick=()=>{delete locked[i]; if(!td.classList.contains('active')) locked[i]=lab; render();};
       tr.appendChild(td);
     });
-
     tbody.appendChild(tr);
-  }
-  updateSummary();
-}
-function updateSummary(){
-  let greens=0, reds=0, total=0, confSum=0;
-  for(let i=0;i<probsMarket.length;i++){
-    for(let j=0;j<3;j++){
-      total++;
-      const mk=(probsMarket[i][j])/100, md=(probsModel[i][j])/100, d=mk-md, mom=momentum(i,j);
-      const isG = d>=CONFIG.thrGreenDelta && mom<=0.02;
-      const isR = d<=CONFIG.thrRedDelta || mom>0.02;
-      if(isG) greens++; if(isR) reds++;
-      const conf = clamp01(Math.max(0,d)/0.2); // грубая уверенность 0..1
-      confSum+=conf;
-    }
-  }
-  const jackpot = Math.round((confSum/total)*100);
-  el('jackpot').innerHTML = `💰 Jackpot Confidence: <b>${jackpot}%</b> • Зелёных сигналов: <b>${greens}</b> из <b>${total}</b> • Красных: <b>${reds}</b>`;
-  let msg='Нейтральная конфигурация.';
-  if(greens>=30) msg='🔥 Core Confidence Sequence — согласованность высокая.';
-  if(greens>=36) msg='💰 Jackpot Alignment Detected — конфигурация близка к идеальной.';
-  el('stats').textContent=msg;
+  });
+  el('stats').textContent=`Категория ${currentCat} • Матчей: ${demoData.length} • Выбрано исходов: ${Object.keys(locked).length}`;
 }
 
-/* ===== coupons ===== */
-function combineOrdered(sets, limit){
-  let res=[[]];
-  for(const s of sets){
-    const next=[];
-    for(const r of res){
-      for(const v of s){
-        const arr=r.concat(v); next.push(arr);
-        if(limit && next.length>=limit){ res=next; break; }
-      }
-      if(limit && next.length>=limit) break;
-    }
-    res=next;
-    if(limit && res.length>=limit) break;
-  }
-  return res;
-}
-function setsFromColors(){
-  const sets=[];
-  for(let i=0;i<probsMarket.length;i++){
-    if(locked[i]){ sets.push([locked[i]]); continue; }
-    const mk=probsMarket[i], md=probsModel[i];
-    const delta=[mk[0]-md[0], mk[1]-md[1], mk[2]-md[2]].map(x=>x/100);
-    const order=['1','X','2'].map((lab,idx)=>({lab,d:delta[idx]})).sort((a,b)=>b.d-a.d);
+// КАТЕГОРИИ
+document.querySelectorAll('.cat-btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    currentCat=parseInt(b.dataset.cat);
+    render();
+  };
+});
 
-    // классификация по текущему классу
-    const cls=[0,1,2].map(idx=>cellClassAndStyle(i,idx).cls);
-    if(cls.some(c=>c.includes('good'))){
-      const best = order.find(o=>cellClassAndStyle(i, o.lab==='1'?0:o.lab==='X'?1:2).cls.includes('good')) || order[0];
-      sets.push([best.lab]);
-    }else if(cls.every(c=>c.includes('bad'))){
-      sets.push([order[0].lab]);
-    }else{
-      sets.push([order[0].lab, order[1].lab]); // нейтральные — двойник
-    }
-  }
-  return sets;
-}
-function buildCoupons(){
-  const sets=setsFromColors();
-  let theoretical=1; for(const s of sets) theoretical*=s.length;
-  const cat=13, k=CONFIG.K[cat]||64;
-  const target=Math.max(1, Math.floor(theoretical/k));
-  const raw=combineOrdered(sets, Math.min(target*3, 25000));
-  const coupons=raw.slice(0,target);
-  el('out').value = coupons.map((c,i)=>`${i+1};${c.join(';')}`).join('\n') || '(ничего не получилось — мало сигналов/слишком жёстко)';
-}
-function exportCsv(){
-  const t=el('out').value.trim(); if(!t){ alert('Сначала сформируй купоны'); return; }
-  const blob=new Blob([t],{type:'text/csv;charset=utf-8'});
+// КНОПКИ
+el('btnBuild').onclick=()=>{
+  const coupons=demoData.map((_,i)=>locked[i]||'-');
+  el('out').value=coupons.join(';');
+};
+el('btnCsv').onclick=()=>{
+  const blob=new Blob([el('out').value],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='bbet_coupons.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
+  const a=document.createElement('a');a.href=url;a.download='bbet_coupons.csv';a.click();
+};
+el('btnClear').onclick=()=>{
+  locked={};el('out').value='';render();
+};
 
-/* ===== loop ===== */
-async function tick(){
-  el('conn').textContent='🔄 Обновление…';
-  const j = await loadData();
-  prepare(j);
-  render();
-  lastSnapshot = snapshot.map(r=>[...r]);
-  const t=new Date();
-  el('conn').textContent=`🟢 Обновлено: ${t.toLocaleTimeString('ru-RU')} • Следующее через 5 минут`;
-}
-
-/* ===== init ===== */
-(function init(){
-  // старт
-  tick();
-  // автообновление (если JSON меняется на сервере — подхватим)
-  setInterval(tick, CONFIG.refreshMs);
-
-  // кнопки
-  el('btnBuild').onclick=buildCoupons;
-  el('btnCsv').onclick=exportCsv;
-  el('btnClear').onclick=()=>{ locked={}; el('out').value=''; render(); };
-})();
+render();
 </script>
 </body>
 </html>
