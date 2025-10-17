@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>⚡ BBET Filter v4.6a — Smart Totobrief Mode</title>
+<title>⚡ BBET Filter v4.6b — Adaptive Parser</title>
 <style>
-  :root{--bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;--btn:#2563eb;--ok:#16a34a;--mid:#ca8a04;--bad:#dc2626;--sel:#22d3ee}
+  :root{--bg:#0f172a;--fg:#e2e8f0;--mut:#94a3b8;--line:#23314f;--btn:#2563eb;--red:#dc2626;--sel:#22d3ee}
   html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial}
   header{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600}
   main{max-width:980px;margin:0 auto;padding:16px}
@@ -19,25 +19,26 @@
   table{width:100%;border-collapse:collapse;margin-top:10px}
   th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
   th:first-child,td:first-child{text-align:left;width:36px}
-  td.pick{cursor:pointer;color:#fff;font-weight:600}
-  td.pick.sel{outline:2px solid var(--sel)}
-  .g{background:var(--ok)} .y{background:var(--mid)} .r{background:var(--bad)}
+  /* белые ячейки по умолчанию */
+  td.pick{cursor:pointer;background:#ffffff;color:#111827;font-weight:600}
+  /* выбранная = красная */
+  td.pick.sel{background:var(--red);color:#fff;outline:2px solid var(--sel)}
   #out{width:100%;min-height:120px;margin-top:10px}
   #stats{margin-top:8px;color:var(--mut)}
+  label.inline{display:flex;align-items:center;gap:6px}
 </style>
 </head>
 <body>
-<header>⚡ BBET Filter v4.6a — Smart Totobrief Mode</header>
+<header>⚡ BBET Filter v4.6b — Adaptive Parser</header>
 <main>
 
 <!-- Управление -->
 <div class="row">
   <input id="draw" type="number" placeholder="№ тиража (например 1484)" style="width:200px">
   <button id="btnLoad">📡 Импорт с TotoBrief</button>
-  <span class="muted">или вставь HTML/CSV ниже:</span>
+  <span class="muted">или вставь HTML/CSV/сырой текст ниже:</span>
 </div>
-<textarea id="raw" placeholder="Вставь таблицу Totobrief (HTML) или строки CSV с тремя процентами на матч..."></textarea>
-
+<textarea id="raw" placeholder="Вставь таблицу Totobrief (HTML), CSV или текст как в примере — скрипт сам найдёт проценты 1/X/2 для 15 матчей."></textarea>
 <div class="row" style="margin-top:8px">
   <span>Категория: 
     <select id="cat">
@@ -48,6 +49,15 @@
   <span>П1 от <input id="min1" type="number" min="0" max="15" style="width:64px"> до <input id="max1" type="number" min="0" max="15" style="width:64px"></span>
   <span>Х от <input id="minX" type="number" min="0" max="15" style="width:64px"> до <input id="maxX" type="number" min="0" max="15" style="width:64px"></span>
   <span>П2 от <input id="min2" type="number" min="0" max="15" style="width:64px"> до <input id="max2" type="number" min="0" max="15" style="width:64px"></span>
+</div>
+
+<div class="row" style="margin-top:6px">
+  <label class="inline">Не более подряд 1: <input id="st1" type="number" min="0" max="15" style="width:64px"></label>
+  <label class="inline">Х: <input id="stX" type="number" min="0" max="15" style="width:64px"></label>
+  <label class="inline">2: <input id="st2" type="number" min="0" max="15" style="width:64px"></label>
+  <label class="inline"><input id="evenXon" type="checkbox"> Лимит Х на чётных: </label>
+  <input id="evenX" type="number" min="0" max="15" style="width:64px">
+  <label class="inline"><input id="antiPattern" type="checkbox"> Антипаттерн 1,1,X,X</label>
   <span style="margin-left:auto">Лимит вывода <input id="limit" type="number" value="50000" style="width:100px"></span>
 </div>
 
@@ -68,11 +78,13 @@
 </main>
 
 <script>
-/* ===== Утилиты ===== */
+/* ==== утилы ==== */
 const el = id => document.getElementById(id);
 const tbody = document.querySelector('#grid tbody');
-const color = v => v>=50?'g':(v>=35?'y':'r');
-const toInt = v => {const n=parseInt(v,10);return Number.isFinite(n)?n:null;}
+const toInt = v => {const n=parseInt(v,10);return Number.isFinite(n)?n:null;};
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+
+/* ==== фильтры ==== */
 function rangesOk(picks, cfg){
   const c={1:0,X:0,2:0}; picks.forEach(v=>c[v]++);
   if(cfg.min1!=null && c[1]<cfg.min1) return false;
@@ -81,40 +93,55 @@ function rangesOk(picks, cfg){
   if(cfg.maxX!=null && c.X>cfg.maxX) return false;
   if(cfg.min2!=null && c[2]<cfg.min2) return false;
   if(cfg.max2!=null && c[2]>cfg.max2) return false;
+  // streak limits
+  let s1=0,sx=0,s2=0,prev=null;
+  for(const v of picks){
+    if(v!==prev){s1=sx=s2=0;prev=v;}
+    if(v==='1'){s1++; if(cfg.st1!=null && s1>cfg.st1) return false;}
+    if(v==='X'){sx++; if(cfg.stX!=null && sx>cfg.stX) return false;}
+    if(v==='2'){s2++; if(cfg.st2!=null && s2>cfg.st2) return false;}
+  }
+  // even X limit
+  if(cfg.evenXon){
+    let ex=0; for(let i=1;i<=picks.length;i++) if(i%2===0 && picks[i-1]==='X') ex++;
+    if(cfg.evenX!=null && ex>cfg.evenX) return false;
+  }
+  // anti pattern 1,1,X,X
+  if(cfg.anti){
+    for(let i=0;i+3<picks.length;i++){
+      const a=picks[i],b=picks[i+1],c2=picks[i+2],d=picks[i+3];
+      if(a===b && c2===d && a!==c2) return false;
+      if(a===b && c2===d && a===c2) return false; // 1,1,1,1 и т.п.
+    }
+  }
   return true;
 }
 
-/* ===== Парсеры Totobrief ===== */
-// 1) HTML Totobrief
+/* ==== парсинг входа ==== */
+// HTML Totobrief
 function parseHTML(html){
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const rows = [...doc.querySelectorAll('tr')].slice(1);
-  const data=[];
-  for(const r of rows){
-    const t=[...r.querySelectorAll('td')].map(x=>x.textContent.trim().replace(',','.'));
-    const nums=t.map(x=>parseFloat(x)).filter(n=>Number.isFinite(n)&&n>=0&&n<=100);
-    if(nums.length>=3){ data.push(nums.slice(0,3)); if(data.length===15) break; }
-  }
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  const cells = [...doc.querySelectorAll('td,th')].map(x=>x.textContent.trim().replace(',','.'));
+  const nums = cells.map(x=>parseFloat(x)).filter(n=>Number.isFinite(n)&&n>=0&&n<=100);
+  return groupTo15x3(nums);
+}
+// CSV / сырой текст (как в твоём примере)
+function parseText(txt){
+  const nums = (txt.replace(',', '.').match(/(?:^|[^0-9])(100|[1-9]?\d(?:\.\d+)?)(?=%?)(?!\d)/g)||[])
+               .map(s=>parseFloat(s)).filter(n=>n>=0&&n<=100);
+  return groupTo15x3(nums);
+}
+function groupTo15x3(nums){
+  const data=[]; for(let i=0;i<45 && i<nums.length; i+=3){ data.push([nums[i],nums[i+1],nums[i+2]]); if(data.length===15) break; }
   return data;
 }
-// 2) CSV/текст
-function parseCSV(txt){
-  const lines = txt.trim().split(/\r?\n/);
-  const data=[];
-  for(const l of lines){
-    const nums=(l.match(/(\d+(\.\d+)?)/g)||[]).map(x=>+x);
-    if(nums.length>=3){ data.push(nums.slice(0,3)); if(data.length===15) break; }
-  }
-  return data;
-}
-// Универсальный парсер
-function parseRaw(txt){
+function parseAny(txt){
   if(!txt) return [];
-  if(txt.includes('<table')||txt.includes('<tr')) return parseHTML(txt);
-  return parseCSV(txt);
+  if(txt.includes('<table')||txt.includes('<tr')||txt.includes('</td')) return parseHTML(txt);
+  return parseText(txt);
 }
 
-/* ===== Отрисовка сетки ===== */
+/* ==== таблица ==== */
 function renderGrid(arr){
   tbody.innerHTML='';
   for(let i=0;i<15;i++){
@@ -122,9 +149,9 @@ function renderGrid(arr){
     const tr=document.createElement('tr');
     tr.innerHTML = `
       <td>${i+1}</td>
-      <td class="pick ${color(row[0])}" data-col="1">${row[0]}</td>
-      <td class="pick ${color(row[1])}" data-col="X">${row[1]}</td>
-      <td class="pick ${color(row[2])}" data-col="2">${row[2]}</td>
+      <td class="pick" data-col="1">${Math.round(row[0])}</td>
+      <td class="pick" data-col="X">${Math.round(row[1])}</td>
+      <td class="pick" data-col="2">${Math.round(row[2])}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -132,29 +159,24 @@ function renderGrid(arr){
 }
 function bindPicking(){
   tbody.querySelectorAll('td.pick').forEach(td=>{
-    td.onclick=()=>{
-      td.classList.toggle('sel');
-    };
+    td.onclick=()=>{ td.classList.toggle('sel'); };
   });
 }
 
-/* ===== Импорт с TotoBrief (через прокси без CORS) ===== */
+/* ==== импорт по номеру тиража ==== */
 async function loadTB(draw){
   const url=`https://r.jina.ai/http://totobrief.ru/results/bbet/${draw}`;
   try{
-    const txt = await fetch(url,{cache:'no-store'}).then(r=>r.text());
-    // вытащим первые 45 чисел 0..100 (по 3 на матч)
-    const nums = [...txt.matchAll(/(?:^|[^0-9])(100|[1-9]?\d)(?=%?)(?:[^0-9]|$)/g)].map(m=>+m[1]);
-    if(nums.length<45) throw 0;
-    const data=[]; for(let i=0;i<15;i++) data.push([nums[i*3],nums[i*3+1],nums[i*3+2]]);
+    const txt=await fetch(url,{cache:'no-store'}).then(r=>r.text());
+    const data=parseHTML(txt);
+    if(!data.length) throw 0;
     renderGrid(data);
     el('raw').value='';
-  }catch{ alert('Не удалось импортировать. Вставь HTML/CSV вручную ниже.'); }
+  }catch{ alert('Не удалось импортировать. Вставь HTML/CSV/текст вручную.'); }
 }
 
-/* ===== Генерация купонов ===== */
+/* ==== генерация купонов ==== */
 function selectedSets(){
-  // для каждой строки соберём выбранные варианты; если ничего не выбрано — все три
   const sets=[];
   tbody.querySelectorAll('tr').forEach(tr=>{
     const picks=[...tr.querySelectorAll('td.pick.sel')].map(td=>td.dataset.col);
@@ -163,14 +185,12 @@ function selectedSets(){
   return sets;
 }
 function combine(sets, hardLimit){
-  // аккуратно размножаем, чтобы не взорваться по памяти
   let res=[[]];
   for(const s of sets){
     const next=[];
     for(const r of res){
       for(const v of s){
-        const arr=r.concat(v);
-        next.push(arr);
+        const arr=r.concat(v); next.push(arr);
         if(hardLimit && next.length>hardLimit){ res=next; break; }
       }
       if(hardLimit && next.length>hardLimit) break;
@@ -181,7 +201,6 @@ function combine(sets, hardLimit){
   return res;
 }
 function targetByCategory(cat){
-  // ориентировочные цели покрытия (можно крутить)
   const map={15:50000,14:25000,13:15000,12:8000,11:4000,10:2000,9:800};
   return map[cat]||5000;
 }
@@ -189,64 +208,49 @@ function buildCoupons(){
   const cfg={
     min1:toInt(el('min1').value), max1:toInt(el('max1').value),
     minX:toInt(el('minX').value), maxX:toInt(el('maxX').value),
-    min2:toInt(el('min2').value), max2:toInt(el('max2').value)
+    min2:toInt(el('min2').value), max2:toInt(el('max2').value),
+    st1:toInt(el('st1').value), stX:toInt(el('stX').value), st2:toInt(el('st2').value),
+    evenXon:el('evenXon').checked, evenX:toInt(el('evenX').value),
+    anti:el('antiPattern').checked
   };
-  const cat = parseInt(el('cat').value,10);
-  const hardLimit = Math.min(+el('limit').value||50000, 100000); // предохранитель
-  const sets = selectedSets();
+  const cat=parseInt(el('cat').value,10);
+  const limit=clamp(+el('limit').value||50000,1,100000);
+  const sets=selectedSets();
+  const theoretical=sets.reduce((a,s)=>a*s.length,1);
 
-  // грубая верхняя оценка (произведение длин)
-  const theoretical = sets.reduce((a,s)=>a*s.length,1);
-
-  // сначала соберём «хребет» — по одному лучшему исходу (где число больше)
-  const greedy = sets.map(s=>{
-    if(s.length===3) return ['1','X','2']; // оставляем свободу
-    return s; // если пользователь руками отрезал — уважаем
-  });
-
-  // бэкенд генерации: ищем все комбинации и фильтруем диапазонами
-  const raw = combine(greedy, Math.min(hardLimit, targetByCategory(cat)*3));
+  // первичный набор
+  const raw = combine(sets, Math.min(limit, targetByCategory(cat)*3));
   const filtered = raw.filter(r=>rangesOk(r,cfg));
-
-  // добираем до цели по категории, если надо (слегка расширим свободу там, где 3 варианта)
   let coupons = filtered.slice(0, targetByCategory(cat));
   if(coupons.length < targetByCategory(cat) && theoretical>filtered.length){
-    const all = combine(sets, Math.min(hardLimit, targetByCategory(cat)*6)).filter(r=>rangesOk(r,cfg));
+    const all = combine(sets, Math.min(limit, targetByCategory(cat)*6)).filter(r=>rangesOk(r,cfg));
     coupons = all.slice(0, targetByCategory(cat));
   }
 
-  // вывод
-  const list = coupons.map((c,i)=>`${i+1};${c.join(';')}`).join('\n');
-  el('out').value = list || '(ни один купон не получился — расширь выбор или ослабь фильтры)';
-  const count = coupons.length;
-  const money = count * 30;
-  const passPct = theoretical ? ((count/theoretical)*100).toFixed(2) : '0.00';
-  el('stats').innerHTML = `Категория <b>${cat}</b> • Купонов: <b>${count.toLocaleString('ru-RU')}</b> • Сумма: <b>${money.toLocaleString('ru-RU')} ₽</b><br>Теоретически возможно: <b>${theoretical.toLocaleString('ru-RU')}</b> • Выведено: <b>${passPct}%</b>`;
+  const list=coupons.map((c,i)=>`${i+1};${c.join(';')}`).join('\n');
+  el('out').value=list || '(ни один купон не получился — расширь выбор или ослабь фильтры)';
+  const count=coupons.length, money=count*30, pass=theoretical?((count/theoretical)*100).toFixed(2):'0.00';
+  el('stats').innerHTML=`Категория <b>${cat}</b> • Купонов: <b>${count.toLocaleString('ru-RU')}</b> • Сумма: <b>${money.toLocaleString('ru-RU')} ₽</b><br>Возможных: <b>${theoretical.toLocaleString('ru-RU')}</b> • Доля вывода: <b>${pass}%</b>`;
 }
 
-/* ===== События ===== */
-el('btnLoad').onclick = ()=>{ const id=(el('draw').value||'').trim(); if(!id) return alert('Введи № тиража'); loadTB(id); };
-el('btnBuild').onclick = buildCoupons;
-el('btnCopy').onclick = async()=>{
+/* ==== события ==== */
+el('btnLoad').onclick=()=>{const id=(el('draw').value||'').trim(); if(!id) return alert('Введи № тиража'); loadTB(id);};
+el('btnBuild').onclick=buildCoupons;
+el('btnCopy').onclick=async()=>{
   const t=el('out').value.trim(); if(!t) return alert('Сначала сформируй купоны');
   try{ await navigator.clipboard.writeText(t); alert('Скопировано'); }catch{ alert('Не удалось скопировать (браузер ограничил буфер)'); }
 };
-el('btnCsv').onclick = ()=>{
+el('btnCsv').onclick=()=>{
   const t=el('out').value.trim(); if(!t) return alert('Сначала сформируй купоны');
-  const blob = new Blob([t],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
+  const blob=new Blob([t],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='bbet_coupons.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
+el('raw').addEventListener('input',()=>{
+  const data=parseAny(el('raw').value||''); if(data.length){ renderGrid(data); }
+});
 
-/* ===== Автоинициализация ===== */
-(function init(){
-  // если пользователь вставит HTML/CSV — парсим и рисуем таблицу
-  el('raw').addEventListener('change',()=>{
-    const data = parseRaw(el('raw').value||'');
-    if(data.length){ renderGrid(data); }
-  });
-  // стартовая пустая сетка
-  renderGrid([]);
-})();
+/* ==== старт ==== */
+renderGrid([]); // пустая сетка
 </script>
 </body>
 </html>
